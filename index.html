@@ -1,241 +1,807 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Lean Construction Dashboard Pro</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"> </script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"> </script>
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- XLSX -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<title>Lean Construction Dashboard</title>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+<!-- SheetJS -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<!-- SortableJS -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-body {
-    background: #0f172a;
-    color: #e2e8f0;
-    font-family: Arial;
-    padding: 20px;
+
+:root{
+    --bg:#07111f;
+    --card:#111c2d;
+    --card2:#162336;
+    --blue:#2f8cff;
+    --green:#19d47b;
+    --yellow:#ffcc33;
+    --red:#ff4d6d;
+    --purple:#9b5cff;
+    --text:#edf2f7;
+    --muted:#9aa7bd;
+    --border:#24354f;
 }
 
-h1 {
-    color: #22c55e;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.container {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+body{
+    font-family:'Inter',sans-serif;
+    background:linear-gradient(135deg,#07111f,#0b1728,#111f35);
+    color:var(--text);
+    min-height:100vh;
 }
 
-.card {
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 12px;
+.container{
+    padding:25px;
 }
 
-.kpi {
-    font-size: 30px;
-    color: #38bdf8;
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+    flex-wrap:wrap;
+    gap:20px;
 }
 
-button {
-    background: #22c55e;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
+.logo-area h1{
+    font-size:28px;
+    font-weight:700;
 }
 
-input {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    display: block;
+.logo-area p{
+    color:var(--muted);
+    margin-top:5px;
 }
 
-.table {
-    width: 100%;
-    margin-top: 10px;
+.actions{
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
 }
-table, th, td {
-    border: 1px solid #334155;
-    border-collapse: collapse;
-    padding: 6px;
+
+.upload-box{
+    position:relative;
 }
+
+.upload-box input{
+    display:none;
+}
+
+.upload-btn{
+    background:linear-gradient(135deg,var(--blue),#6b7cff);
+    padding:12px 20px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:600;
+    transition:.3s;
+    box-shadow:0 0 20px rgba(47,140,255,.35);
+}
+
+.upload-btn:hover{
+    transform:translateY(-2px);
+}
+
+.export-btn{
+    background:linear-gradient(135deg,var(--green),#00c897);
+    padding:12px 20px;
+    border:none;
+    border-radius:12px;
+    color:white;
+    cursor:pointer;
+    font-weight:600;
+    box-shadow:0 0 20px rgba(25,212,123,.35);
+}
+
+.filters{
+    display:flex;
+    gap:15px;
+    margin-bottom:25px;
+    flex-wrap:wrap;
+}
+
+.filter{
+    background:var(--card);
+    border:1px solid var(--border);
+    padding:12px 16px;
+    border-radius:12px;
+    color:white;
+}
+
+.kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.kpi-card{
+    background:linear-gradient(145deg,var(--card),var(--card2));
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:24px;
+    position:relative;
+    overflow:hidden;
+}
+
+.kpi-card::before{
+    content:'';
+    position:absolute;
+    top:-50px;
+    right:-50px;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:rgba(255,255,255,.04);
+}
+
+.kpi-title{
+    color:var(--muted);
+    font-size:14px;
+}
+
+.kpi-value{
+    font-size:36px;
+    font-weight:700;
+    margin-top:10px;
+}
+
+.kpi-status{
+    margin-top:15px;
+    font-size:14px;
+    font-weight:600;
+}
+
+.green{color:var(--green);}
+.red{color:var(--red);}
+.yellow{color:var(--yellow);}
+.blue{color:var(--blue);}
+
+.chart-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
+    gap:25px;
+    margin-bottom:30px;
+}
+
+.chart-card{
+    background:linear-gradient(145deg,var(--card),var(--card2));
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:20px;
+}
+
+.chart-title{
+    margin-bottom:20px;
+    font-size:18px;
+    font-weight:600;
+}
+
+.kanban-section{
+    margin-top:30px;
+}
+
+.kanban-title{
+    margin-bottom:20px;
+    font-size:24px;
+}
+
+.kanban{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:18px;
+    overflow:auto;
+}
+
+.column{
+    background:linear-gradient(145deg,var(--card),var(--card2));
+    border:1px solid var(--border);
+    border-radius:18px;
+    min-height:500px;
+    padding:15px;
+}
+
+.column h3{
+    margin-bottom:15px;
+    font-size:16px;
+}
+
+.task{
+    background:#1d2b42;
+    border-left:4px solid var(--blue);
+    padding:14px;
+    border-radius:12px;
+    margin-bottom:12px;
+    cursor:grab;
+    transition:.3s;
+}
+
+.task:hover{
+    transform:translateY(-3px);
+    box-shadow:0 0 20px rgba(0,0,0,.25);
+}
+
+.task strong{
+    display:block;
+    margin-bottom:6px;
+}
+
+.task small{
+    color:var(--muted);
+}
+
+.table-section{
+    margin-top:35px;
+}
+
+.table-card{
+    background:linear-gradient(145deg,var(--card),var(--card2));
+    border-radius:20px;
+    border:1px solid var(--border);
+    overflow:hidden;
+}
+
+.table-header{
+    padding:20px;
+    border-bottom:1px solid var(--border);
+    font-size:18px;
+    font-weight:600;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#16253a;
+    color:#dfe7f5;
+    text-align:left;
+    padding:16px;
+    font-size:14px;
+}
+
+td{
+    padding:16px;
+    border-bottom:1px solid rgba(255,255,255,.04);
+    color:#c8d3e5;
+}
+
+.status{
+    padding:8px 12px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+}
+
+.status-green{
+    background:rgba(25,212,123,.15);
+    color:var(--green);
+}
+
+.status-red{
+    background:rgba(255,77,109,.15);
+    color:var(--red);
+}
+
+.status-yellow{
+    background:rgba(255,204,51,.15);
+    color:var(--yellow);
+}
+
+.alerts{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:20px;
+    margin-top:30px;
+}
+
+.alert-card{
+    background:linear-gradient(145deg,var(--card),var(--card2));
+    border:1px solid var(--border);
+    border-left:4px solid var(--red);
+    border-radius:18px;
+    padding:20px;
+}
+
+.alert-card h4{
+    margin-bottom:10px;
+}
+
+.progress{
+    width:100%;
+    height:12px;
+    background:#1f2f49;
+    border-radius:999px;
+    margin-top:12px;
+    overflow:hidden;
+}
+
+.progress span{
+    display:block;
+    height:100%;
+    background:linear-gradient(90deg,var(--blue),var(--green));
+}
+
+.footer{
+    margin-top:40px;
+    text-align:center;
+    color:var(--muted);
+    padding-bottom:40px;
+}
+
+@media(max-width:1200px){
+    .kanban{
+        grid-template-columns:repeat(3,1fr);
+    }
+}
+
+@media(max-width:768px){
+
+    .chart-grid{
+        grid-template-columns:1fr;
+    }
+
+    .kanban{
+        grid-template-columns:1fr;
+    }
+
+}
+
 </style>
 </head>
-
 <body>
-
-<h1>🏗️ Lean Dashboard - Kits x Cronograma</h1>
-
-<div class="card">
-    <h3>Upload de Planilhas</h3>
-    <input type="file" id="fileInput" multiple>
-</div>
 
 <div class="container">
 
-<div class="card">
-    <h3>Total Kits</h3>
-    <div class="kpi" id="totalKits">0</div>
-</div>
+    <!-- TOPBAR -->
+    <div class="topbar">
 
-<div class="card">
-    <h3>Total Atividades</h3>
-    <div class="kpi" id="totalAtividades">0</div>
-</div>
+        <div class="logo-area">
+            <h1>🏗️ Lean Construction Control</h1>
+            <p>Planejamento • Kits • Logística • Produção</p>
+        </div>
 
-<div class="card">
-    <h3>Kits sem vínculo</h3>
-    <div class="kpi" id="kitsSemVinculo">0</div>
-</div>
+        <div class="actions">
 
-<div class="card">
-    <h3>Status dos Kits</h3>
-    <canvas id="statusChart"></canvas>
-</div>
+            <div class="upload-box">
+                <label class="upload-btn">
+                    📁 Upload Cronograma / Kits
+                    <input type="file" id="excelUpload" multiple accept=".xlsx,.xls">
+                </label>
+            </div>
 
-<div class="card">
-    <h3>Kits por Disciplina</h3>
-    <canvas id="disciplinaChart"></canvas>
-</div>
+            <button class="export-btn">
+                📊 Exportar Relatório
+            </button>
 
-<div class="card">
-    <h3>Atrasos</h3>
-    <canvas id="atrasoChart"></canvas>
-</div>
+        </div>
 
-</div>
+    </div>
 
-<div class="card">
-    <h3>Kits sem Correspondência no Cronograma</h3>
-    <table class="table" id="tabelaErros"></table>
+    <!-- FILTROS -->
+    <div class="filters">
+
+        <select class="filter">
+            <option>Todos os Blocos</option>
+            <option>Bloco A</option>
+            <option>Bloco B</option>
+        </select>
+
+        <select class="filter">
+            <option>Todos os Pavimentos</option>
+            <option>P1</option>
+            <option>P2</option>
+        </select>
+
+        <select class="filter">
+            <option>Todas Disciplinas</option>
+            <option>Drywall</option>
+            <option>Elétrica</option>
+            <option>Hidráulica</option>
+        </select>
+
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+
+        <div class="kpi-card">
+            <div class="kpi-title">Total de Kits</div>
+            <div class="kpi-value blue">482</div>
+            <div class="kpi-status green">▲ +12% essa semana</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-title">Atividades</div>
+            <div class="kpi-value green">126</div>
+            <div class="kpi-status green">Fluxo saudável</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-title">Kits Atrasados</div>
+            <div class="kpi-value red">18</div>
+            <div class="kpi-status red">⚠ Ação necessária</div>
+        </div>
+
+        <div class="kpi-card">
+            <div class="kpi-title">Lean Score</div>
+            <div class="kpi-value yellow">87%</div>
+            <div class="progress">
+                <span style="width:87%"></span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GRÁFICOS -->
+    <div class="chart-grid">
+
+        <div class="chart-card">
+            <div class="chart-title">📦 Status dos Kits</div>
+            <canvas id="statusChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">🏗️ Kits por Disciplina</div>
+            <canvas id="disciplineChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">📈 Planejado vs Real</div>
+            <canvas id="timelineChart"></canvas>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">🚨 Atrasos</div>
+            <canvas id="delayChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- KANBAN -->
+    <div class="kanban-section">
+
+        <h2 class="kanban-title">🔁 Fluxo Lean dos Kits</h2>
+
+        <div class="kanban">
+
+            <div class="column" id="planned">
+                <h3>📋 Planejado</h3>
+
+                <div class="task">
+                    <strong>Kit Drywall - Torre A</strong>
+                    <small>Pavimento 4 • Separar amanhã</small>
+                </div>
+
+            </div>
+
+            <div class="column" id="separating">
+                <h3>📦 Separando</h3>
+
+                <div class="task">
+                    <strong>Kit Elétrica</strong>
+                    <small>Pavimento 2</small>
+                </div>
+
+            </div>
+
+            <div class="column" id="checking">
+                <h3>✅ Conferindo</h3>
+            </div>
+
+            <div class="column" id="ready">
+                <h3>🚚 Pronto</h3>
+            </div>
+
+            <div class="column" id="delivered">
+                <h3>📍 Entregue</h3>
+            </div>
+
+            <div class="column" id="using">
+                <h3>🏗️ Em Uso</h3>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- LOGÍSTICA -->
+    <div class="table-section">
+
+        <div class="table-card">
+
+            <div class="table-header">
+                🚚 Planejamento Logístico
+            </div>
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Kit</th>
+                        <th>Início Atividade</th>
+                        <th>Entrega Ideal</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td>Kit Drywall P4</td>
+                        <td>12/06</td>
+                        <td>10/06</td>
+                        <td>
+                            <span class="status status-green">
+                                NO PRAZO
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Kit Elétrica P2</td>
+                        <td>14/06</td>
+                        <td>12/06</td>
+                        <td>
+                            <span class="status status-yellow">
+                                ATENÇÃO
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Kit Hidráulica P8</td>
+                        <td>15/06</td>
+                        <td>13/06</td>
+                        <td>
+                            <span class="status status-red">
+                                ATRASADO
+                            </span>
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="alerts">
+
+        <div class="alert-card">
+            <h4>🚨 Kits sem vínculo</h4>
+            <p>12 kits não possuem correspondência no cronograma.</p>
+        </div>
+
+        <div class="alert-card">
+            <h4>⚠ Atividades sem material</h4>
+            <p>5 atividades iniciam em até 48h sem kits prontos.</p>
+        </div>
+
+        <div class="alert-card">
+            <h4>📉 Pico logístico</h4>
+            <p>Volume excessivo de entregas previsto para quinta-feira.</p>
+        </div>
+
+    </div>
+
+    <div class="footer">
+        Lean Construction Dashboard • Controle Inteligente de Produção
+    </div>
+
 </div>
 
 <script>
 
-let kits = [];
-let cronograma = [];
+/* ==========================
+UPLOAD EXCEL
+========================== */
 
-// Upload múltiplo
-document.getElementById('fileInput').addEventListener('change', function(e) {
+document
+.getElementById('excelUpload')
+.addEventListener('change', handleFileUpload);
+
+function handleFileUpload(e){
 
     const files = e.target.files;
 
-    Array.from(files).forEach(file => {
+    for(let file of files){
 
         const reader = new FileReader();
 
-        reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
+        reader.onload = function(evt){
 
-            wb.SheetNames.forEach(sheet => {
-                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
+            const data = new Uint8Array(evt.target.result);
 
-                // Detecta tipo de arquivo
-                if (rows.length > 0 && rows[0].Bloco !== undefined) {
-                    cronograma = cronograma.concat(rows);
-                } else {
-                    kits = kits.concat(rows);
-                }
+            const workbook = XLSX.read(data,{type:'array'});
+
+            workbook.SheetNames.forEach(sheetName=>{
+
+                const sheet = workbook.Sheets[sheetName];
+
+                const json = XLSX.utils.sheet_to_json(sheet);
+
+                console.log("Planilha:",sheetName);
+                console.log(json);
+
             });
 
-            atualizarDashboard();
         };
 
         reader.readAsArrayBuffer(file);
-    });
+
+    }
+
+}
+
+/* ==========================
+CHARTS
+========================== */
+
+const commonOptions = {
+
+    responsive:true,
+
+    plugins:{
+        legend:{
+            labels:{
+                color:'#fff'
+            }
+        }
+    },
+
+    scales:{
+        x:{
+            ticks:{color:'#fff'},
+            grid:{color:'rgba(255,255,255,.05)'}
+        },
+        y:{
+            ticks:{color:'#fff'},
+            grid:{color:'rgba(255,255,255,.05)'}
+        }
+    }
+
+};
+
+new Chart(
+document.getElementById('statusChart'),
+{
+    type:'doughnut',
+
+    data:{
+        labels:[
+            'Planejado',
+            'Separando',
+            'Pronto',
+            'Entregue',
+            'Em Uso'
+        ],
+
+        datasets:[{
+            data:[30,20,18,22,10],
+            backgroundColor:[
+                '#2f8cff',
+                '#ffcc33',
+                '#19d47b',
+                '#9b5cff',
+                '#ff4d6d'
+            ]
+        }]
+    }
+
 });
 
-function atualizarDashboard() {
+new Chart(
+document.getElementById('disciplineChart'),
+{
+    type:'bar',
 
-    document.getElementById('totalKits').innerText = kits.length;
-    document.getElementById('totalAtividades').innerText = cronograma.length;
+    data:{
+        labels:[
+            'Drywall',
+            'Pintura',
+            'Elétrica',
+            'Hidráulica',
+            'Forro'
+        ],
 
-    let semVinculo = [];
-    let disciplinas = {};
-    let atrasos = 0;
+        datasets:[{
+            label:'Kits',
+            data:[120,90,75,65,110],
+            backgroundColor:'#2f8cff'
+        }]
+    },
 
-    kits.forEach(k => {
+    options:commonOptions
+});
 
-        let encontrou = cronograma.find(c =>
-            c.Bloco && k.Descrição && c.Tarefa &&
-            k.Descrição.toString().includes(c.Tarefa)
-        );
+new Chart(
+document.getElementById('timelineChart'),
+{
+    type:'line',
 
-        if (!encontrou) {
-            semVinculo.push(k);
-        }
+    data:{
+        labels:[
+            'Sem1',
+            'Sem2',
+            'Sem3',
+            'Sem4',
+            'Sem5'
+        ],
 
-        // contar disciplina
-        let disc = k.Disciplina || "Outros";
-        disciplinas[disc] = (disciplinas[disc] || 0) + 1;
+        datasets:[
+            {
+                label:'Planejado',
+                data:[20,40,65,85,100],
+                borderColor:'#2f8cff',
+                tension:.4
+            },
+            {
+                label:'Real',
+                data:[18,35,58,70,82],
+                borderColor:'#19d47b',
+                tension:.4
+            }
+        ]
+    },
 
-        // simular atraso
-        if (Math.random() > 0.7) atrasos++;
+    options:commonOptions
+});
+
+new Chart(
+document.getElementById('delayChart'),
+{
+    type:'bar',
+
+    data:{
+        labels:[
+            'No Prazo',
+            'Atrasado'
+        ],
+
+        datasets:[{
+            data:[82,18],
+            backgroundColor:[
+                '#19d47b',
+                '#ff4d6d'
+            ]
+        }]
+    },
+
+    options:commonOptions
+});
+
+/* ==========================
+KANBAN DRAG DROP
+========================== */
+
+document.querySelectorAll('.column').forEach(column=>{
+
+    new Sortable(column,{
+        group:'shared',
+        animation:150
     });
 
-    document.getElementById('kitsSemVinculo').innerText = semVinculo.length;
-
-    renderTabela(semVinculo);
-    renderGraficos(disciplinas, atrasos);
-}
-
-function renderTabela(lista) {
-    let html = "<tr><th>Item</th><th>Descrição</th></tr>";
-
-    lista.slice(0,10).forEach(item => {
-        html += `<tr>
-            <td>${item["Código do Item"] || "-"}</td>
-            <td>${item["Descrição"] || "-"}</td>
-        </tr>`;
-    });
-
-    document.getElementById('tabelaErros').innerHTML = html;
-}
-
-function renderGraficos(disciplinas, atrasos) {
-
-    new Chart(document.getElementById('disciplinaChart'), {
-        type: 'bar',
-        data: {
-            labels: Object.keys(disciplinas),
-            datasets: [{
-                data: Object.values(disciplinas),
-                backgroundColor: '#38bdf8'
-            }]
-        }
-    });
-
-    new Chart(document.getElementById('statusChart'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Planejado','Separando','Entregue','Execução'],
-            datasets: [{
-                data: [20,30,25,25],
-                backgroundColor: ['#22c55e','#facc15','#38bdf8','#f87171']
-            }]
-        }
-    });
-
-    new Chart(document.getElementById('atrasoChart'), {
-        type: 'bar',
-        data: {
-            labels: ['Atrasados','No prazo'],
-            datasets: [{
-                data: [atrasos, kits.length - atrasos],
-                backgroundColor: ['#ef4444','#22c55e']
-            }]
-        }
-    });
-}
+});
 
 </script>
 
