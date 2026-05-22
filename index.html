@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Lean Construction Dashboard Pro</title>
+
+https://cdn.jsdelivr.net/npm/chart.jsscript>
+https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.jsscript>
+
+<style>
+body {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: Arial;
+    padding: 20px;
+}
+
+h1 {
+    color: #22c55e;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.kpi {
+    font-size: 30px;
+    color: #38bdf8;
+}
+
+button {
+    background: #22c55e;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+input {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.table {
+    width: 100%;
+    margin-top: 10px;
+}
+table, th, td {
+    border: 1px solid #334155;
+    border-collapse: collapse;
+    padding: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🏗️ Lean Dashboard - Kits x Cronograma</h1>
+
+<div class="card">
+    <h3>Upload de Planilhas</h3>
+    <input type="file" id="fileInput" multiple>
+</div>
+
+<div class="container">
+
+<div class="card">
+    <h3>Total Kits</h3>
+    <div class="kpi" id="totalKits">0</div>
+</div>
+
+<div class="card">
+    <h3>Total Atividades</h3>
+    <div class="kpi" id="totalAtividades">0</div>
+</div>
+
+<div class="card">
+    <h3>Kits sem vínculo</h3>
+    <div class="kpi" id="kitsSemVinculo">0</div>
+</div>
+
+<div class="card">
+    <h3>Status dos Kits</h3>
+    <canvas id="statusChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>Kits por Disciplina</h3>
+    <canvas id="disciplinaChart"></canvas>
+</div>
+
+<div class="card">
+    <h3>Atrasos</h3>
+    <canvas id="atrasoChart"></canvas>
+</div>
+
+</div>
+
+<div class="card">
+    <h3>Kits sem Correspondência no Cronograma</h3>
+    <table class="table" id="tabelaErros"></table>
+</div>
+
+<script>
+
+let kits = [];
+let cronograma = [];
+
+// Upload múltiplo
+document.getElementById('fileInput').addEventListener('change', function(e) {
+
+    const files = e.target.files;
+
+    Array.from(files).forEach(file => {
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+
+            wb.SheetNames.forEach(sheet => {
+                const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
+
+                // Detecta tipo de arquivo
+                if (rows.length > 0 && rows[0].Bloco !== undefined) {
+                    cronograma = cronograma.concat(rows);
+                } else {
+                    kits = kits.concat(rows);
+                }
+            });
+
+            atualizarDashboard();
+        };
+
+        reader.readAsArrayBuffer(file);
+    });
+});
+
+function atualizarDashboard() {
+
+    document.getElementById('totalKits').innerText = kits.length;
+    document.getElementById('totalAtividades').innerText = cronograma.length;
+
+    let semVinculo = [];
+    let disciplinas = {};
+    let atrasos = 0;
+
+    kits.forEach(k => {
+
+        let encontrou = cronograma.find(c =>
+            c.Bloco && k.Descrição && c.Tarefa &&
+            k.Descrição.toString().includes(c.Tarefa)
+        );
+
+        if (!encontrou) {
+            semVinculo.push(k);
+        }
+
+        // contar disciplina
+        let disc = k.Disciplina || "Outros";
+        disciplinas[disc] = (disciplinas[disc] || 0) + 1;
+
+        // simular atraso
+        if (Math.random() > 0.7) atrasos++;
+    });
+
+    document.getElementById('kitsSemVinculo').innerText = semVinculo.length;
+
+    renderTabela(semVinculo);
+    renderGraficos(disciplinas, atrasos);
+}
+
+function renderTabela(lista) {
+    let html = "<tr><th>Item</th><th>Descrição</th></tr>";
+
+    lista.slice(0,10).forEach(item => {
+        html += `<tr>
+            <td>${item["Código do Item"] || "-"}</td>
+            <td>${item["Descrição"] || "-"}</td>
+        </tr>`;
+    });
+
+    document.getElementById('tabelaErros').innerHTML = html;
+}
+
+function renderGraficos(disciplinas, atrasos) {
+
+    new Chart(document.getElementById('disciplinaChart'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(disciplinas),
+            datasets: [{
+                data: Object.values(disciplinas),
+                backgroundColor: '#38bdf8'
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Planejado','Separando','Entregue','Execução'],
+            datasets: [{
+                data: [20,30,25,25],
+                backgroundColor: ['#22c55e','#facc15','#38bdf8','#f87171']
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('atrasoChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Atrasados','No prazo'],
+            datasets: [{
+                data: [atrasos, kits.length - atrasos],
+                backgroundColor: ['#ef4444','#22c55e']
+            }]
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>
