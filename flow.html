@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeanFlow · Controle Lean Construction</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#070a0f;
+  --bg1:#0c1018;
+  --bg2:#111820;
+  --bg3:#172030;
+  --bg4:#1d2a3f;
+  --bg5:#243348;
+  --border:#1e2d42;
+  --border2:#2a3f5c;
+  --text1:#e8f0fe;
+  --text2:#8ca4c8;
+  --text3:#4d6385;
+  --text4:#2e4060;
+  --blue:#3d8ef8;
+  --blue2:#1a5fd4;
+  --blue3:#0d3a8a;
+  --cyan:#00d4ff;
+  --cyan2:#0099cc;
+  --emerald:#00e5a0;
+  --emerald2:#00a870;
+  --amber:#ffb320;
+  --amber2:#cc8800;
+  --rose:#ff3d6b;
+  --rose2:#cc1a47;
+  --violet:#a855f7;
+  --violet2:#7c22cc;
+  --orange:#ff7a2f;
+  --font-head:'Syne',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+html,body{background:var(--bg0);color:var(--text1);font-family:var(--font-head);min-height:100vh;font-size:14px}
+
+/* ─── SCROLLBAR ─────────────────────────────────────── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ─── GRID NOISE BACKGROUND ─────────────────────────── */
+body::before{content:'';position:fixed;inset:0;background-image:
+  linear-gradient(rgba(61,142,248,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(61,142,248,.03) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none;z-index:0}
+
+/* ─── LAYOUT ─────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1}
+
+/* ─── TOP BAR ────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;border-bottom:1px solid var(--border);background:rgba(7,10,15,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;letter-spacing:-1px;font-family:var(--font-head)}
+.brand-name{font-size:16px;font-weight:800;letter-spacing:-.5px;color:var(--text1)}
+.brand-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.5px;margin-top:1px}
+.topbar-center{display:flex;align-items:center;gap:4px;flex:1;justify-content:center;max-width:700px;margin:0 auto}
+.nav-tab{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;letter-spacing:.2px;white-space:nowrap}
+.nav-tab:hover{color:var(--text2);background:var(--bg3)}
+.nav-tab.active{background:var(--blue3);color:var(--blue);border:1px solid var(--blue2)}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.today-chip{padding:4px 12px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:20px;font-size:11px;color:var(--cyan);font-family:var(--font-mono)}
+.upload-area{display:flex;gap:6px}
+.upload-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;white-space:nowrap}
+.upload-btn:hover{background:var(--bg4);border-color:var(--blue2)}
+.upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-btn.accent{background:var(--blue3);border-color:var(--blue2);color:var(--cyan)}
+
+/* ─── CONTENT ────────────────────────────────────────── */
+.page{display:none;padding:20px 24px;flex:1}
+.page.active{display:block}
+
+/* ─── KPI ROW ────────────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:18px}
+.kpi{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k-blue::before{background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.kpi.k-green::before{background:linear-gradient(90deg,var(--emerald),#00ff88)}
+.kpi.k-amber::before{background:linear-gradient(90deg,var(--amber),var(--orange))}
+.kpi.k-rose::before{background:linear-gradient(90deg,var(--rose),var(--violet))}
+.kpi.k-violet::before{background:linear-gradient(90deg,var(--violet),var(--blue))}
+.kpi.k-cyan::before{background:linear-gradient(90deg,var(--cyan),var(--emerald))}
+.kpi-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono)}
+.kpi-value{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;font-family:var(--font-mono)}
+.kpi.k-blue .kpi-value{color:var(--blue)}
+.kpi.k-green .kpi-value{color:var(--emerald)}
+.kpi.k-amber .kpi-value{color:var(--amber)}
+.kpi.k-rose .kpi-value{color:var(--rose)}
+.kpi.k-violet .kpi-value{color:var(--violet)}
+.kpi.k-cyan .kpi-value{color:var(--cyan)}
+
+/* ─── GRID LAYOUTS ────────────────────────────────────── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.grid-13{display:grid;grid-template-columns:1fr 3fr;gap:14px;margin-bottom:14px}
+.grid-31{display:grid;grid-template-columns:3fr 1fr;gap:14px;margin-bottom:14px}
+
+/* ─── CARD ────────────────────────────────────────────── */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:18px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:700;color:var(--text1);letter-spacing:.1px}
+.card-sub{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
+.chart-box{position:relative;width:100%}
+
+/* ─── FILTER BAR ─────────────────────────────────────── */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.fbtn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--bg2);color:var(--text3);transition:all .12s;letter-spacing:.2px}
+.fbtn:hover{color:var(--text2);border-color:var(--border2)}
+.fbtn.active{background:var(--blue3);border-color:var(--blue2);color:var(--blue)}
+.fbtn.active-green{background:rgba(0,229,160,.1);border-color:var(--emerald2);color:var(--emerald)}
+.fbtn.active-amber{background:rgba(255,179,32,.1);border-color:var(--amber2);color:var(--amber)}
+
+/* ─── TABLE ──────────────────────────────────────────── */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-family:var(--font-mono)}
+.data-table td{font-size:12px;color:var(--text2);padding:8px 10px;border-bottom:1px solid rgba(30,45,66,.5);vertical-align:middle}
+.data-table tbody tr:hover td{background:var(--bg2)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table td.name{color:var(--text1);font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.data-table td.mono{font-family:var(--font-mono);font-size:11px}
+
+/* ─── STATUS PILLS ───────────────────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.pill-done{background:rgba(0,229,160,.1);color:var(--emerald);border:1px solid rgba(0,229,160,.25)}
+.pill-active{background:rgba(61,142,248,.1);color:var(--blue);border:1px solid rgba(61,142,248,.25)}
+.pill-future{background:rgba(77,99,133,.12);color:var(--text3);border:1px solid var(--border)}
+.pill-alert{background:rgba(255,61,107,.1);color:var(--rose);border:1px solid rgba(255,61,107,.25)}
+.pill-warn{background:rgba(255,179,32,.1);color:var(--amber);border:1px solid rgba(255,179,32,.25)}
+.pill-sep{background:rgba(168,85,247,.1);color:var(--violet);border:1px solid rgba(168,85,247,.25)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ─── BLOCO TAG ──────────────────────────────────────── */
+.btag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;font-family:var(--font-mono)}
+
+/* ─── PROGRESS BAR ───────────────────────────────────── */
+.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.p-label{font-size:12px;color:var(--text2);width:80px;flex-shrink:0;font-weight:600}
+.p-track{flex:1;height:20px;background:var(--bg3);border-radius:4px;position:relative;overflow:hidden}
+.p-fill{height:100%;border-radius:4px;position:absolute;display:flex;align-items:center;padding:0 8px;transition:width .5s ease}
+.p-fill-text{font-size:10px;font-weight:700;color:#070a0f}
+.p-pct{font-size:11px;color:var(--text3);width:36px;text-align:right;flex-shrink:0;font-family:var(--font-mono)}
+
+/* ─── KANBAN ─────────────────────────────────────────── */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;overflow-x:auto;min-height:300px}
+.kan-col{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;min-height:300px}
+.kan-col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kan-col-name{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.kan-col-count{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
+.kan-card{background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:10px;margin-bottom:7px;cursor:grab;transition:all .15s;position:relative}
+.kan-card:hover{border-color:var(--blue2);transform:translateY(-1px)}
+.kan-card.dragging{opacity:.5;cursor:grabbing}
+.kan-card-name{font-size:12px;font-weight:600;color:var(--text1);margin-bottom:5px;line-height:1.3}
+.kan-card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.kan-card-tag{font-size:10px;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);color:var(--text3);background:var(--bg3)}
+
+/* ─── CHECKLIST ──────────────────────────────────────── */
+.check-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:7px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .12s}
+.check-item:hover{border-color:var(--border2)}
+.check-item.checked{opacity:.6}
+.check-item.checked .check-label{text-decoration:line-through;color:var(--text3)}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+.check-item.checked .check-box{background:var(--emerald);border-color:var(--emerald);color:#fff}
+.check-label{font-size:13px;font-weight:600;color:var(--text1)}
+.check-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
+
+/* ─── ALERT BOX ──────────────────────────────────────── */
+.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:8px;border-left:3px solid}
+.alert-item.critical{background:rgba(255,61,107,.06);border-color:var(--rose)}
+.alert-item.warn{background:rgba(255,179,32,.06);border-color:var(--amber)}
+.alert-item.info{background:rgba(61,142,248,.06);border-color:var(--blue)}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-text{font-size:12px;color:var(--text2);line-height:1.4}
+.alert-text strong{color:var(--text1);font-weight:700}
+
+/* ─── PLANO SEMANAL ──────────────────────────────────── */
+.semana-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px}
+.semana-day{flex-shrink:0;width:130px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px}
+.semana-day.today-col{border-color:var(--blue2);background:var(--blue3)}
+.semana-day-hdr{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-family:var(--font-mono)}
+.semana-day.today-col .semana-day-hdr{color:var(--blue)}
+.semana-item{font-size:11px;color:var(--text2);padding:5px 7px;border-radius:4px;margin-bottom:4px;background:var(--bg1);border:1px solid var(--border)}
+.semana-item.sep{border-color:rgba(168,85,247,.3);color:var(--violet)}
+.semana-item.del{border-color:rgba(0,229,160,.3);color:var(--emerald)}
+.semana-item.ini{border-color:rgba(61,142,248,.3);color:var(--blue)}
+
+/* ─── LINHA DE BALANÇO ───────────────────────────────── */
+#balanceChart{width:100%;height:300px}
+
+/* ─── ETIQUETA ───────────────────────────────────────── */
+.etiqueta{background:#fff;color:#111;border-radius:10px;padding:16px;font-family:var(--font-mono);max-width:280px;border:2px solid #ddd;font-size:12px}
+.etiqueta-title{font-size:16px;font-weight:800;margin-bottom:8px;font-family:var(--font-head)}
+.etiqueta-qr{width:80px;height:80px;background:#111;border-radius:4px;margin:8px 0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-align:center}
+.etiqueta-field{margin-bottom:4px}
+.etiqueta-field span{font-weight:700}
+
+/* ─── LEAN SCORE ─────────────────────────────────────── */
+.lean-score-ring{display:flex;flex-direction:column;align-items:center;gap:6px}
+.lean-score-value{font-size:48px;font-weight:800;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-3px;line-height:1}
+.lean-score-label{font-size:11px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.5px}
+
+/* ─── FLOW ───────────────────────────────────────────── */
+.flow-steps{display:flex;gap:0;margin:12px 0;overflow-x:auto}
+.flow-step{flex:1;min-width:90px;text-align:center;position:relative}
+.flow-step::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px}
+.flow-step:last-child::after{display:none}
+.flow-step-icon{font-size:20px;margin-bottom:4px}
+.flow-step-name{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-family:var(--font-mono)}
+.flow-step.flow-done .flow-step-name{color:var(--emerald)}
+.flow-step.flow-active .flow-step-name{color:var(--blue)}
+.flow-step-count{font-size:15px;font-weight:800;margin-bottom:2px}
+.flow-step.flow-done .flow-step-count{color:var(--emerald)}
+.flow-step.flow-active .flow-step-count{color:var(--blue)}
+.flow-step.flow-future .flow-step-count{color:var(--text4)}
+
+/* ─── RESPONSIVE ─────────────────────────────────────── */
+@media(max-width:900px){
+  .grid-2,.grid-3,.grid-13,.grid-31{grid-template-columns:1fr}
+  .kanban{grid-template-columns:repeat(3,1fr)}
+  .topbar-center{display:none}
+}
+@media(max-width:600px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .topbar{padding:0 12px;height:auto;padding-top:8px;padding-bottom:8px}
+}
+
+/* ─── ANIMATIONS ─────────────────────────────────────── */
+.page.active .kpi{animation:fadeUp .3s ease both}
+.page.active .kpi:nth-child(2){animation-delay:.04s}
+.page.active .kpi:nth-child(3){animation-delay:.08s}
+.page.active .kpi:nth-child(4){animation-delay:.12s}
+.page.active .kpi:nth-child(5){animation-delay:.16s}
+.page.active .kpi:nth-child(6){animation-delay:.20s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-size:14px;gap:10px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ TOP BAR ════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-icon">LF</div>
+    <div>
+      <div class="brand-name">LeanFlow</div>
+      <div class="brand-sub">LEAN CONSTRUCTION</div>
+    </div>
+  </div>
+  <div class="topbar-center" id="nav-tabs">
+    <button class="nav-tab active" onclick="goPage('overview')">Visão Geral</button>
+    <button class="nav-tab" onclick="goPage('kits')">Kits & Fluxo</button>
+    <button class="nav-tab" onclick="goPage('plano')">Plano Semanal</button>
+    <button class="nav-tab" onclick="goPage('logistica')">Logística</button>
+    <button class="nav-tab" onclick="goPage('lean')">Lean Score</button>
+    <button class="nav-tab" onclick="goPage('etiqueta')">Etiquetas</button>
+  </div>
+  <div class="topbar-right">
+    <span class="today-chip" id="today-chip"></span>
+    <div class="upload-area">
+      <label class="upload-btn accent">
+        ↑ Cronograma
+        <input type="file" id="uploadCrono" accept=".xlsx,.xls,.csv">
+      </label>
+      <label class="upload-btn">
+        ↑ Kits
+        <input type="file" id="uploadKits" accept=".xlsx,.xls,.csv">
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PAGES ══════════════════════════════════════════════ -->
+
+<!-- ── PAGE: VISÃO GERAL ─────────────────────────────────── -->
+<div class="page active" id="page-overview">
+  <div class="kpi-row" id="kpi-overview"></div>
+
+  <!-- Flow Lean -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">
+      <span class="card-title">Fluxo Lean · Workflow de Kits</span>
+      <span class="card-sub">Status operacional</span>
+    </div>
+    <div class="flow-steps" id="flow-steps"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Progresso por Bloco</span>
+        <span class="card-sub" id="active-blocos-lbl"></span>
+      </div>
+      <div id="bloco-progress"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Status das Atividades</span>
+        <span class="card-sub">Distribuição geral</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <canvas id="statusDoughnut" width="130" height="130"></canvas>
+        <div id="status-legend" style="flex:1;display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Atividades por Mês</span>
+        <span class="card-sub">Volume de início</span>
+      </div>
+      <div class="chart-box" style="height:220px">
+        <canvas id="monthBar"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Disciplinas</span>
+        <span class="card-sub">Tarefas por categoria</span>
+      </div>
+      <div class="chart-box" id="disc-chart-wrap" style="height:220px">
+        <canvas id="discBar"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🚨 Central de Alertas</span>
+      <span class="card-sub" id="alerts-count"></span>
+    </div>
+    <div id="alerts-container"></div>
+  </div>
+</div>
+
+<!-- ── PAGE: KITS & FLUXO ─────────────────────────────────── -->
+<div class="page" id="page-kits">
+  <div class="kpi-row" id="kpi-kits"></div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-hdr">
+      <span class="card-title">Kanban · Fluxo de Separação</span>
+      <span class="card-sub">Arraste para atualizar status</span>
+    </div>
+    <div class="filter-bar" id="kanban-filters"></div>
+    <div class="kanban" id="kanban-board"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Conferência de Kit</span>
+      <span class="card-sub">Selecione uma atividade</span>
+    </div>
+    <div class="filter-bar" id="checklist-filters"></div>
+    <div id="checklist-container"></div>
+  </div>
+</div>
+
+<!-- ── PAGE: PLANO SEMANAL ────────────────────────────────── -->
+<div class="page" id="page-plano">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div>
+      <h2 style="font-size:18px;font-weight:800;color:var(--text1)">Plano Semanal Lean</h2>
+      <p style="font-size:12px;color:var(--text3);font-family:var(--font-mono);margin-top:2px" id="semana-label"></p>
+    </div>
+    <button onclick="gerarPlanoSemanal()" style="padding:9px 20px;background:var(--blue3);border:1px solid var(--blue2);border-radius:8px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px">⚡ Gerar Plano Semanal</button>
+  </div>
+
+  <div class="semana-row" id="semana-row"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">📦 Kits para Separar esta Semana</span>
+        <span class="card-sub" id="sep-count"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="sep-table">
+          <thead><tr>
+            <th>Atividade</th><th>Bloco</th><th>Pavimento</th><th>Disciplina</th><th>Início</th><th>Entrega Ideal</th><th>Prioridade</th>
+          </tr></thead>
+          <tbody id="sep-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">🚚 Entregas Programadas</span>
+        <span class="card-sub" id="del-count"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="del-table">
+          <thead><tr>
+            <th>Atividade</th><th>Bloco</th><th>Data Entrega</th><th>Status</th>
+          </tr></thead>
+          <tbody id="del-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">📋 PPC · Percent Plan Complete</span>
+      <span class="card-sub">Confiabilidade do planejamento</span>
+    </div>
+    <div class="grid-3">
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:48px;font-weight:800;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-2px" id="ppc-value">—</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">PPC GERAL</div>
+      </div>
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:48px;font-weight:800;color:var(--amber);letter-spacing:-2px" id="ppc-bloco20">—</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">BLOCO 20</div>
+      </div>
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:48px;font-weight:800;color:var(--blue);letter-spacing:-2px" id="ppc-bloco19">—</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">BLOCO 19</div>
+      </div>
+    </div>
+    <div class="chart-box" style="height:200px;margin-top:10px">
+      <canvas id="ppcChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: LOGÍSTICA ────────────────────────────────────── -->
+<div class="page" id="page-logistica">
+  <div class="kpi-row" id="kpi-logistica"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Içamento por Bloco</span>
+        <span class="card-sub">Volume total de içamentos</span>
+      </div>
+      <div class="chart-box" style="height:240px">
+        <canvas id="icaBlockChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Picos Logísticos por Mês</span>
+        <span class="card-sub">Volume de içamento programado</span>
+      </div>
+      <div class="chart-box" style="height:240px">
+        <canvas id="icaMonthChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Linha de Balanço · Lean Construction</span>
+      <span class="card-sub">X = Tempo · Y = Pavimentos · Fluxo contínuo por bloco</span>
+    </div>
+    <div class="filter-bar" id="balance-filters"></div>
+    <div class="chart-box" style="height:320px">
+      <canvas id="balanceChart"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🚚 Tabela de Logística Lean</span>
+      <span class="card-sub">Entrega 1–3 dias antes da atividade</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr>
+          <th>Kit / Atividade</th><th>Bloco</th><th>Pavimento</th><th>Disciplina</th><th>Início Atividade</th><th>Entrega Ideal</th><th>Içamento</th><th>Status</th>
+        </tr></thead>
+        <tbody id="logistica-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── PAGE: LEAN SCORE ───────────────────────────────────── -->
+<div class="page" id="page-lean">
+  <div class="grid-13">
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px">
+      <div class="lean-score-ring">
+        <div class="lean-score-value" id="lean-score-val">—</div>
+        <div class="lean-score-label">LEAN SCORE</div>
+      </div>
+      <canvas id="leanGauge" width="200" height="110"></canvas>
+      <div style="font-size:12px;color:var(--text3);text-align:center;max-width:180px;line-height:1.5">Pontuação composta baseada em PPC, fluxo, atrasos e produtividade</div>
+    </div>
+    <div>
+      <div class="kpi-row" id="kpi-lean"></div>
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Componentes do Lean Score</span>
+        </div>
+        <div id="lean-components"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Heatmap da Obra</span>
+        <span class="card-sub">Bloco × Pavimento · Concentração de atividades</span>
+      </div>
+      <div id="heatmap-container"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Curva S · Planejado vs Executado</span>
+      </div>
+      <div class="chart-box" style="height:260px">
+        <canvas id="curvaSChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">🚧 Controle de Restrições (Last Planner)</span>
+      <span class="card-sub" id="restricoes-count"></span>
+    </div>
+    <div id="restricoes-container"></div>
+  </div>
+</div>
+
+<!-- ── PAGE: ETIQUETAS ───────────────────────────────────── -->
+<div class="page" id="page-etiqueta">
+  <div style="margin-bottom:14px">
+    <h2 style="font-size:18px;font-weight:800;color:var(--text1)">Gerador de Etiquetas</h2>
+    <p style="font-size:12px;color:var(--text3);font-family:var(--font-mono);margin-top:2px">Selecione a atividade para gerar a etiqueta do kit</p>
+  </div>
+  <div class="grid-31">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Selecionar Atividade</span>
+      </div>
+      <div class="filter-bar" id="etiqueta-bloco-filters"></div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="etiqueta-table">
+          <thead><tr>
+            <th>Tarefa</th><th>Bloco</th><th>Pav.</th><th>Pacote</th><th>Disciplina</th><th>Início</th><th>Ação</th>
+          </tr></thead>
+          <tbody id="etiqueta-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hdr">
+          <span class="card-title">Preview da Etiqueta</span>
+        </div>
+        <div id="etiqueta-preview" style="display:flex;justify-content:center;padding:10px">
+          <div style="color:var(--text3);font-size:12px;text-align:center;padding:30px">Selecione uma atividade à esquerda</div>
+        </div>
+      </div>
+      <button onclick="printEtiqueta()" style="width:100%;padding:10px;background:var(--blue3);border:1px solid var(--blue2);border-radius:8px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer">🖨️ Imprimir Etiqueta</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIGURAÇÃO DE COLUNAS
+// ═══════════════════════════════════════════════════════════
+const COL = {
+  BLOCO:'Bloco', PAVIMENTO:'Pavimento', PACOTE:'Pacote', TAREFA:'Tarefa',
+  DISCIPLINA:'Disciplina', INICIO:'Início', FIM:'Fim',
+  DURACAO:'Duração_dias_úteis', ICAMENTO:'Içamento_total'
+};
+
+// ═══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════
+const TODAY = new Date('2026-05-22');
+let CRONO = [], KITS = [];
+let filterBloco = 'Todos', filterEtiquetaBloco = 'Todos', filterKanbanBloco = 'Todos';
+let kitStatus = {}; // key=tarefa id, val=status string
+
+const BLOCOS_PAL = {
+  'Bloco 17':'#3d8ef8','Bloco 18':'#00e5a0','Bloco 19':'#ffb320',
+  'Bloco 20':'#a855f7','Bloco 21':'#ff3d6b','Bloco 22':'#00d4ff',
+  'Bloco 23':'#fb923c','Bloco 24':'#e879f9'
+};
+const DISC_PAL = ['#3d8ef8','#00e5a0','#ffb320','#a855f7','#ff3d6b','#00d4ff','#fb923c','#e879f9','#a3e635','#f472b6'];
+const PAV_ORDER = {'3º':3,'2º':2,'1º':1,'Térreo':0};
+const FLOW_STATES = ['Planejado','Separando','Conferido','Embalado','Entregue','Em Uso'];
+
+// ═══════════════════════════════════════════════════════════
+// UTILITÁRIOS
+// ═══════════════════════════════════════════════════════════
+document.getElementById('today-chip').textContent = TODAY.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+
+function excelDate(v){
+  if(!v) return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  if(typeof v==='number') return new Date(Math.round((v-25569)*86400000));
+  const d=new Date(v); return isNaN(d)?null:d;
+}
+function getStatus(row){
+  const ini=excelDate(row[COL.INICIO]), fim=excelDate(row[COL.FIM]);
+  if(!ini||!fim) return 'Indefinido';
+  if(fim<TODAY) return 'Concluído';
+  if(ini<=TODAY) return 'Em Andamento';
+  return 'Futuro';
+}
+function discBase(d){
+  if(!d||d==='nan'||d==='null') return null;
+  return String(d).replace(/\s*\(.*?\)/g,'').replace(/\s+/g,' ').trim()||null;
+}
+function fmtDate(d){
+  if(!d) return '—';
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function weekStart(d){const r=new Date(d);r.setDate(r.getDate()-r.getDay());return r;}
+function weekEnd(d){const r=new Date(d);r.setDate(r.getDate()+(6-r.getDay()));return r;}
+function rowKey(r){return `${r[COL.BLOCO]}|${r[COL.PAVIMENTO]}|${r[COL.PACOTE]}|${r[COL.TAREFA]}`;}
+function getPriority(ini){
+  const diff=(excelDate(ini)-TODAY)/(86400000);
+  if(diff<=1) return {label:'🔴 Alta',cls:'pill-alert'};
+  if(diff<=5) return {label:'🟡 Média',cls:'pill-warn'};
+  return {label:'🟢 Normal',cls:'pill-done'};
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════════════════
+function goPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{
+    if(t.textContent.toLowerCase().includes(id.slice(0,4))||
+       (id==='overview'&&t.textContent.includes('Geral'))||
+       (id==='kits'&&t.textContent.includes('Kit'))||
+       (id==='plano'&&t.textContent.includes('Plano'))||
+       (id==='logistica'&&t.textContent.includes('Log'))||
+       (id==='lean'&&t.textContent.includes('Lean'))||
+       (id==='etiqueta'&&t.textContent.includes('Etiquet'))) t.classList.add('active');
+  });
+}
+window.goPage=goPage;
+
+// ═══════════════════════════════════════════════════════════
+// CHARTS (globals)
+// ═══════════════════════════════════════════════════════════
+let charts={};
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER PRINCIPAL
+// ═══════════════════════════════════════════════════════════
+function renderAll(data){
+  CRONO=data;
+  // init kit status
+  CRONO.forEach(r=>{ const k=rowKey(r); if(!kitStatus[k]) kitStatus[k]='Planejado'; });
+
+  renderOverview();
+  renderKits();
+  renderPlano();
+  renderLogistica();
+  renderLean();
+  renderEtiqueta();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: VISÃO GERAL
+// ═══════════════════════════════════════════════════════════
+function renderOverview(){
+  const data=CRONO;
+  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  const sc={Concluído:0,'Em Andamento':0,Futuro:0};
+  data.forEach(r=>{const s=getStatus(r);if(sc[s]!==undefined)sc[s]++;});
+  const totalIca=data.reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0);
+  const activeBlocos=blocos.filter(b=>data.filter(r=>r[COL.BLOCO]===b&&getStatus(r)==='Em Andamento').length>0);
+
+  document.getElementById('kpi-overview').innerHTML=`
+    <div class="kpi k-blue"><div class="kpi-label">Total Atividades</div><div class="kpi-value">${data.length.toLocaleString('pt-BR')}</div><div class="kpi-sub">${blocos.length} blocos</div></div>
+    <div class="kpi k-green"><div class="kpi-label">Concluídas</div><div class="kpi-value">${sc['Concluído']}</div><div class="kpi-sub">${(sc['Concluído']/data.length*100).toFixed(1)}% do total</div></div>
+    <div class="kpi k-amber"><div class="kpi-label">Em Andamento</div><div class="kpi-value">${sc['Em Andamento']}</div><div class="kpi-sub">Hoje · ${activeBlocos.length} blocos</div></div>
+    <div class="kpi k-violet"><div class="kpi-label">Futuras</div><div class="kpi-value">${sc['Futuro'].toLocaleString('pt-BR')}</div><div class="kpi-sub">Agendadas</div></div>
+    <div class="kpi k-rose"><div class="kpi-label">Içamento Total</div><div class="kpi-value">${Math.round(totalIca)}</div><div class="kpi-sub">Unidades acumuladas</div></div>
+    <div class="kpi k-cyan"><div class="kpi-label">Blocos Ativos</div><div class="kpi-value">${activeBlocos.length}</div><div class="kpi-sub">${blocos.length} no total</div></div>
+  `;
+
+  // Flow Lean
+  const flowCounts = FLOW_STATES.map(s=>Object.values(kitStatus).filter(v=>v===s).length);
+  const flowTotal = Object.keys(kitStatus).length||1;
+  const flowIcons = ['📋','📦','✅','📫','🚚','⚙️'];
+  document.getElementById('flow-steps').innerHTML = FLOW_STATES.map((s,i)=>`
+    <div class="flow-step ${flowCounts[i]>0?(i<=1?'flow-active':'flow-done'):'flow-future'}">
+      <div class="flow-step-icon">${flowIcons[i]}</div>
+      <div class="flow-step-count">${flowCounts[i]}</div>
+      <div class="flow-step-name">${s}</div>
+    </div>`).join('');
+
+  // Progresso por bloco
+  document.getElementById('active-blocos-lbl').textContent=`${activeBlocos.length} bloco(s) ativos`;
+  document.getElementById('bloco-progress').innerHTML=blocos.map(b=>{
+    const rows=data.filter(r=>r[COL.BLOCO]===b);
+    const done=rows.filter(r=>getStatus(r)==='Concluído').length;
+    const active=rows.filter(r=>getStatus(r)==='Em Andamento').length;
+    const pct=rows.length>0?Math.round(done/rows.length*100):0;
+    const col=BLOCOS_PAL[b]||'#3d8ef8';
+    const ini=rows.map(r=>excelDate(r[COL.INICIO])).filter(Boolean).sort((a,b)=>a-b)[0];
+    const fim=rows.map(r=>excelDate(r[COL.FIM])).filter(Boolean).sort((a,b)=>b-a)[0];
+    const span=ini&&fim?fim-ini:1;
+    const gone=ini?Math.min(TODAY,fim||TODAY)-ini:0;
+    const w=span>0?Math.max(2,Math.min(100,Math.round(gone/span*100))):0;
+    return `<div class="progress-row">
+      <span class="p-label">${b.replace('Bloco ','B')}</span>
+      <div class="p-track">
+        <div class="p-fill" style="width:${w}%;background:${col}">
+          ${w>14?`<span class="p-fill-text">${pct}%</span>`:''}
+        </div>
+        ${active>0?`<div style="position:absolute;right:0;top:0;height:100%;width:3px;background:var(--amber)"></div>`:''}
+      </div>
+      <span class="p-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  // Status doughnut
+  destroyChart('status');
+  const sctx=document.getElementById('statusDoughnut').getContext('2d');
+  charts.status=new Chart(sctx,{
+    type:'doughnut',
+    data:{labels:['Concluído','Em Andamento','Futuro'],datasets:[{data:[sc['Concluído'],sc['Em Andamento'],sc['Futuro']],backgroundColor:['#00e5a0','#3d8ef8','#243348'],borderWidth:2,borderColor:'#0c1018'}]},
+    options:{responsive:false,cutout:'72%',plugins:{legend:{display:false}}}
+  });
+  document.getElementById('status-legend').innerHTML=[
+    ['Concluído','#00e5a0',sc['Concluído']],
+    ['Em Andamento','#3d8ef8',sc['Em Andamento']],
+    ['Futuro','#243348',sc['Futuro']]
+  ].map(([l,c,v])=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:2px;background:${c};flex-shrink:0"></span><span style="font-size:12px;color:var(--text2)">${l}</span></div>
+      <span style="font-size:14px;font-weight:700;color:var(--text1)">${v}</span>
+    </div>`).join('');
+
+  // Month chart
+  const mMap={};
+  data.forEach(r=>{const d=excelDate(r[COL.INICIO]);if(!d)return;const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;mMap[k]=(mMap[k]||0)+1;});
+  const mKeys=Object.keys(mMap).sort().slice(0,18);
+  const curM=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}`;
+  destroyChart('month');
+  charts.month=new Chart(document.getElementById('monthBar'),{
+    type:'bar',
+    data:{labels:mKeys.map(k=>{const[y,m]=k.split('-');return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2)}),
+      datasets:[{data:mKeys.map(k=>mMap[k]),backgroundColor:mKeys.map(k=>k<curM?'rgba(0,229,160,.65)':k===curM?'rgba(0,212,255,.9)':'rgba(61,142,248,.45)'),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
+  });
+
+  // Disc chart
+  const dMap={};
+  data.forEach(r=>{const b=discBase(r[COL.DISCIPLINA]);if(!b)return;dMap[b]=(dMap[b]||0)+1;});
+  const dEntries=Object.entries(dMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroyChart('disc');
+  document.getElementById('disc-chart-wrap').style.height=Math.max(200,dEntries.length*36+60)+'px';
+  charts.disc=new Chart(document.getElementById('discBar'),{
+    type:'bar',
+    data:{labels:dEntries.map(e=>e[0]),datasets:[{data:dEntries.map(e=>e[1]),backgroundColor:DISC_PAL.slice(0,dEntries.length),borderRadius:4,barThickness:18}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#8ca4c8',font:{size:11}},grid:{display:false}}}}
+  });
+
+  // Alertas
+  const alerts=[];
+  const ativas=data.filter(r=>getStatus(r)==='Em Andamento');
+  if(ativas.length>0) alerts.push({type:'info',icon:'⚡',text:`<strong>${ativas.length} atividades em execução hoje</strong> em ${[...new Set(ativas.map(r=>r[COL.BLOCO]))].join(', ')}`});
+  const semanaFim=addDays(TODAY,7);
+  const iniciandoSemana=data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&ini>TODAY&&ini<=semanaFim;});
+  if(iniciandoSemana.length>0) alerts.push({type:'warn',icon:'📅',text:`<strong>${iniciandoSemana.length} atividades iniciam nesta semana</strong> — verifique se os kits estão separados`});
+  const atrasadas=data.filter(r=>{const fim=excelDate(r[COL.FIM]);const ini=excelDate(r[COL.INICIO]);return fim&&ini&&fim<TODAY&&ini<=TODAY&&getStatus(r)!=='Concluído';});
+  if(atrasadas.length>0) alerts.push({type:'critical',icon:'🚨',text:`<strong>${atrasadas.length} atividades com potencial atraso</strong> — data fim ultrapassada sem conclusão`});
+  const semProximas=data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&ini>TODAY&&ini<=addDays(TODAY,3);});
+  if(semProximas.length>0) alerts.push({type:'critical',icon:'🔴',text:`<strong>${semProximas.length} atividades iniciam em menos de 3 dias</strong> — kits devem estar prontos`});
+
+  document.getElementById('alerts-count').textContent=`${alerts.length} alertas ativos`;
+  document.getElementById('alerts-container').innerHTML=alerts.map(a=>`
+    <div class="alert-item ${a.type}">
+      <span class="alert-icon">${a.icon}</span>
+      <div class="alert-text">${a.text}</div>
+    </div>`).join('')||(` <div style="color:var(--text3);font-size:13px;padding:16px;text-align:center">✅ Nenhum alerta crítico no momento</div>`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: KITS & KANBAN
+// ═══════════════════════════════════════════════════════════
+function renderKits(){
+  const data=CRONO;
+  const ativas=data.filter(r=>getStatus(r)==='Em Andamento').length;
+  const separando=Object.values(kitStatus).filter(v=>v==='Separando').length;
+  const prontos=Object.values(kitStatus).filter(v=>v==='Entregue'||v==='Em Uso').length;
+
+  document.getElementById('kpi-kits').innerHTML=`
+    <div class="kpi k-violet"><div class="kpi-label">Total Kits</div><div class="kpi-value">${data.length}</div><div class="kpi-sub">Atividades mapeadas</div></div>
+    <div class="kpi k-amber"><div class="kpi-label">Em Separação</div><div class="kpi-value">${separando}</div><div class="kpi-sub">No almoxarifado</div></div>
+    <div class="kpi k-green"><div class="kpi-label">Entregues</div><div class="kpi-value">${prontos}</div><div class="kpi-sub">Na obra</div></div>
+    <div class="kpi k-blue"><div class="kpi-label">Ativas Hoje</div><div class="kpi-value">${ativas}</div><div class="kpi-sub">Em execução</div></div>
+  `;
+
+  // Kanban filters
+  const blocos=['Todos',...[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort()];
+  document.getElementById('kanban-filters').innerHTML=blocos.map(b=>
+    `<button class="fbtn${filterKanbanBloco===b?' active':''}" onclick="setKanbanFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
+
+  renderKanban();
+  renderChecklist();
+}
+
+function setKanbanFilter(b){filterKanbanBloco=b;renderKits();}
+window.setKanbanFilter=setKanbanFilter;
+
+function renderKanban(){
+  const data=CRONO.filter(r=>{
+    if(filterKanbanBloco!=='Todos'&&r[COL.BLOCO]!==filterKanbanBloco) return false;
+    const s=getStatus(r);
+    return s==='Em Andamento'||s==='Concluído';
+  }).slice(0,40);
+
+  const byState={};
+  FLOW_STATES.forEach(s=>byState[s]=[]);
+  data.forEach(r=>{
+    const k=rowKey(r);
+    const st=kitStatus[k]||'Planejado';
+    if(byState[st]) byState[st].push(r);
+  });
+
+  const colColors={'Planejado':'var(--text3)','Separando':'var(--amber)','Conferido':'var(--blue)','Embalado':'var(--violet)','Entregue':'var(--emerald)','Em Uso':'var(--emerald)'};
+  document.getElementById('kanban-board').innerHTML=FLOW_STATES.map(s=>`
+    <div class="kan-col" data-state="${s}" ondragover="ev.preventDefault()" ondrop="kanDrop(event,'${s}')">
+      <div class="kan-col-hdr">
+        <span class="kan-col-name" style="color:${colColors[s]}">${s}</span>
+        <span class="kan-col-count">${byState[s].length}</span>
+      </div>
+      ${byState[s].map(r=>{
+        const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+        const disc=discBase(r[COL.DISCIPLINA])||'—';
+        return `<div class="kan-card" draggable="true" ondragstart="kanDragStart(event,'${rowKey(r).replace(/'/g,'\\'')}')" data-key="${rowKey(r)}">
+          <div class="kan-card-name">${(r[COL.TAREFA]||'').slice(0,55)}${(r[COL.TAREFA]||'').length>55?'…':''}</div>
+          <div class="kan-card-tags">
+            <span class="kan-card-tag" style="color:${col}">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span>
+            <span class="kan-card-tag">${r[COL.PAVIMENTO]||'—'}</span>
+            <span class="kan-card-tag">${disc}</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+let dragKey=null;
+function kanDragStart(ev,key){dragKey=key;ev.target.classList.add('dragging');}
+function kanDrop(ev,state){
+  ev.preventDefault();
+  if(dragKey){kitStatus[dragKey]=state;document.querySelectorAll('.kan-card').forEach(c=>c.classList.remove('dragging'));renderKanban();renderOverview();}
+}
+window.kanDragStart=kanDragStart; window.kanDrop=kanDrop;
+
+function renderChecklist(){
+  const ativas=CRONO.filter(r=>getStatus(r)==='Em Andamento').slice(0,8);
+  document.getElementById('checklist-filters').innerHTML=ativas.map((r,i)=>`
+    <button class="fbtn" onclick="showChecklist(${i})">${(r[COL.TAREFA]||'').slice(0,30)}…</button>`).join('');
+
+  if(ativas.length>0) showChecklistData(ativas[0]);
+  else document.getElementById('checklist-container').innerHTML=`<div style="color:var(--text3);padding:20px;text-align:center">Nenhuma atividade ativa hoje</div>`;
+}
+
+function showChecklist(idx){
+  const ativas=CRONO.filter(r=>getStatus(r)==='Em Andamento').slice(0,8);
+  if(ativas[idx]) showChecklistData(ativas[idx]);
+}
+window.showChecklist=showChecklist;
+
+function showChecklistData(row){
+  const k=rowKey(row);
+  const checks=[
+    {id:'sep',label:'Separado',sub:'Material separado no almoxarifado'},
+    {id:'conf',label:'Conferido',sub:'Quantidade e itens verificados'},
+    {id:'comp',label:'Completo',sub:'Todos os itens presentes'},
+    {id:'emb',label:'Embalado',sub:'Kit embalado e protegido'},
+    {id:'etiq',label:'Etiquetado',sub:'Etiqueta colada e legível'},
+    {id:'exp',label:'Expedido',sub:'Saiu do almoxarifado'},
+    {id:'ent',label:'Entregue',sub:'Recebido na frente de trabalho'},
+  ];
+  const stored=JSON.parse(localStorage.getItem('checks_'+k)||'{}');
+  document.getElementById('checklist-container').innerHTML=`
+    <div style="margin-bottom:10px;padding:10px;background:var(--bg3);border-radius:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--text1)">${row[COL.TAREFA]}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)">${row[COL.BLOCO]} · ${row[COL.PAVIMENTO]} · ${discBase(row[COL.DISCIPLINA])||'—'}</div>
+    </div>
+    ${checks.map(c=>`
+    <div class="check-item${stored[c.id]?' checked':''}" onclick="toggleCheck('${k}','${c.id}',this)">
+      <div class="check-box">${stored[c.id]?'✓':''}</div>
+      <div>
+        <div class="check-label">${c.label}</div>
+        <div class="check-sub">${c.sub}</div>
+      </div>
+    </div>`).join('')}`;
+}
+
+function toggleCheck(key,cid,el){
+  const stored=JSON.parse(localStorage.getItem('checks_'+key)||'{}');
+  stored[cid]=!stored[cid];
+  localStorage.setItem('checks_'+key,JSON.stringify(stored));
+  el.classList.toggle('checked');
+  const box=el.querySelector('.check-box');
+  box.textContent=stored[cid]?'✓':'';
+}
+window.toggleCheck=toggleCheck;
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: PLANO SEMANAL
+// ═══════════════════════════════════════════════════════════
+function renderPlano(){
+  const wStart=weekStart(TODAY), wEnd=weekEnd(TODAY);
+  document.getElementById('semana-label').textContent=
+    `Semana de ${wStart.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} a ${wEnd.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
+
+  gerarPlanoSemanal();
+  renderPPC();
+}
+
+function gerarPlanoSemanal(){
+  const wStart=weekStart(TODAY), wEnd=addDays(weekStart(TODAY),6);
+  const dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
+
+  // Atividades que iniciam ou estão ativas nesta semana
+  const weekTasks=CRONO.filter(r=>{
+    const ini=excelDate(r[COL.INICIO]), fim=excelDate(r[COL.FIM]);
+    if(!ini||!fim) return false;
+    return (ini<=wEnd && fim>=wStart);
+  });
+
+  // Calendário semanal
+  const calDays=[];
+  for(let i=0;i<7;i++){
+    const d=addDays(wStart,i);
+    const dayTasks=weekTasks.filter(r=>{
+      const ini=excelDate(r[COL.INICIO]);
+      return ini&&ini.toDateString()===d.toDateString();
+    });
+    calDays.push({d,dayTasks});
+  }
+
+  document.getElementById('semana-row').innerHTML=calDays.map(({d,dayTasks})=>{
+    const isToday=d.toDateString()===TODAY.toDateString();
+    return `<div class="semana-day${isToday?' today-col':''}">
+      <div class="semana-day-hdr">${dias[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</div>
+      ${dayTasks.map(r=>`<div class="semana-item ini">${(r[COL.TAREFA]||'').slice(0,22)}</div>`).join('')}
+      ${dayTasks.length===0?`<div style="font-size:10px;color:var(--text4)">—</div>`:''}
+    </div>`;
+  }).join('');
+
+  // Kits para separar (início na semana ou nos próximos 5 dias)
+  const toSep=CRONO.filter(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    if(!ini) return false;
+    const diff=(ini-TODAY)/86400000;
+    return diff>0&&diff<=7;
+  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO])).slice(0,20);
+
+  document.getElementById('sep-count').textContent=toSep.length+' kits';
+  document.getElementById('sep-tbody').innerHTML=toSep.map(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    const entrega=ini?addDays(ini,-2):null;
+    const prio=getPriority(r[COL.INICIO]);
+    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+    return `<tr>
+      <td class="name" title="${r[COL.TAREFA]}">${(r[COL.TAREFA]||'').slice(0,44)}${(r[COL.TAREFA]||'').length>44?'…':''}</td>
+      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
+      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
+      <td class="mono">${fmtDate(ini)}</td>
+      <td class="mono" style="color:var(--amber)">${fmtDate(entrega)}</td>
+      <td><span class="pill ${prio.cls}">${prio.label}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Entregas da semana
+  const toDel=CRONO.filter(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    if(!ini) return false;
+    const entrega=addDays(ini,-2);
+    const diff=(entrega-TODAY)/86400000;
+    return diff>=-1&&diff<=7;
+  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO])).slice(0,15);
+
+  document.getElementById('del-count').textContent=toDel.length+' entregas';
+  document.getElementById('del-tbody').innerHTML=toDel.map(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    const entrega=addDays(ini,-2);
+    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+    const atrasado=entrega<TODAY;
+    return `<tr>
+      <td class="name">${(r[COL.TAREFA]||'').slice(0,44)}${(r[COL.TAREFA]||'').length>44?'…':''}</td>
+      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
+      <td class="mono" style="color:${atrasado?'var(--rose)':'var(--amber)'}">${fmtDate(entrega)}</td>
+      <td><span class="pill ${atrasado?'pill-alert':'pill-warn'}">${atrasado?'⚠ Urgente':'Programado'}</span></td>
+    </tr>`;
+  }).join('');
+}
+window.gerarPlanoSemanal=gerarPlanoSemanal;
+
+function renderPPC(){
+  const blocos=[...new Set(CRONO.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  const calcPPC=(rows)=>{
+    const total=rows.length;
+    if(total===0) return 0;
+    const done=rows.filter(r=>getStatus(r)==='Concluído').length;
+    const active=rows.filter(r=>getStatus(r)==='Em Andamento').length;
+    return Math.round((done+active*0.5)/total*100);
+  };
+  const ppcGeral=calcPPC(CRONO);
+  document.getElementById('ppc-value').textContent=ppcGeral+'%';
+  const b20=CRONO.filter(r=>r[COL.BLOCO]==='Bloco 20');
+  const b19=CRONO.filter(r=>r[COL.BLOCO]==='Bloco 19');
+  document.getElementById('ppc-bloco20').textContent=calcPPC(b20)+'%';
+  document.getElementById('ppc-bloco19').textContent=calcPPC(b19)+'%';
+
+  // PPC por bloco chart
+  const ppcVals=blocos.map(b=>calcPPC(CRONO.filter(r=>r[COL.BLOCO]===b)));
+  destroyChart('ppc');
+  charts.ppc=new Chart(document.getElementById('ppcChart'),{
+    type:'bar',
+    data:{labels:blocos.map(b=>b.replace('Bloco ','')),datasets:[{label:'PPC %',data:ppcVals,backgroundColor:blocos.map(b=>BLOCOS_PAL[b]||'#3d8ef8'),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{display:false}},y:{max:100,ticks:{color:'#4d6385',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(30,45,66,.4)'}}}}
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: LOGÍSTICA
+// ═══════════════════════════════════════════════════════════
+function renderLogistica(){
+  const data=CRONO;
+  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  const totalIca=data.reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0);
+  const icaByBloco=blocos.map(b=>({b,v:data.filter(r=>r[COL.BLOCO]===b).reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0)}));
+  const maxIca=Math.max(...icaByBloco.map(x=>x.v));
+
+  document.getElementById('kpi-logistica').innerHTML=`
+    <div class="kpi k-cyan"><div class="kpi-label">Içamento Total</div><div class="kpi-value">${Math.round(totalIca)}</div><div class="kpi-sub">Unidades programadas</div></div>
+    <div class="kpi k-blue"><div class="kpi-label">Pico Logístico</div><div class="kpi-value">${Math.round(maxIca)}</div><div class="kpi-sub">${icaByBloco.find(x=>x.v===maxIca)?.b||'—'}</div></div>
+    <div class="kpi k-amber"><div class="kpi-label">Entregas Semana</div><div class="kpi-value">${data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&(ini-TODAY)/86400000<=7&&(ini-TODAY)/86400000>-1;}).length}</div><div class="kpi-sub">Kits a entregar</div></div>
+    <div class="kpi k-green"><div class="kpi-label">Blocos Planejados</div><div class="kpi-value">${blocos.length}</div><div class="kpi-sub">8 blocos total</div></div>
+  `;
+
+  // Içamento por bloco
+  destroyChart('icaBlock');
+  charts.icaBlock=new Chart(document.getElementById('icaBlockChart'),{
+    type:'bar',
+    data:{labels:blocos.map(b=>b.replace('Bloco ','')),datasets:[{label:'Içamento',data:icaByBloco.map(x=>Math.round(x.v)),backgroundColor:blocos.map(b=>BLOCOS_PAL[b]||'#3d8ef8'),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
+  });
+
+  // Içamento por mês
+  const mIca={};
+  data.forEach(r=>{
+    const d=excelDate(r[COL.INICIO]);
+    if(!d) return;
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    mIca[k]=(mIca[k]||0)+(Number(r[COL.ICAMENTO])||0);
+  });
+  const mKeys=Object.keys(mIca).sort().slice(0,18);
+  const curM=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}`;
+  destroyChart('icaMonth');
+  charts.icaMonth=new Chart(document.getElementById('icaMonthChart'),{
+    type:'line',
+    data:{labels:mKeys.map(k=>{const[y,m]=k.split('-');return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2)}),
+      datasets:[{label:'Içamento',data:mKeys.map(k=>Math.round(mIca[k])),borderColor:'var(--cyan)',backgroundColor:'rgba(0,212,255,.08)',fill:true,tension:.4,pointBackgroundColor:mKeys.map(k=>k===curM?'var(--amber)':'var(--cyan)'),pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
+  });
+
+  // Linha de balanço
+  renderLinhaBalanco();
+
+  // Tabela logística
+  const logRows=data.filter(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    return ini&&(ini-TODAY)/86400000>=-14&&(ini-TODAY)/86400000<=21;
+  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO]));
+
+  document.getElementById('logistica-tbody').innerHTML=logRows.map(r=>{
+    const ini=excelDate(r[COL.INICIO]);
+    const entrega=ini?addDays(ini,-2):null;
+    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+    const s=getStatus(r);
+    const pill=s==='Concluído'?'<span class="pill pill-done"><span class="dot"></span>Concluído</span>':
+                s==='Em Andamento'?'<span class="pill pill-active"><span class="dot"></span>Ativo</span>':
+                '<span class="pill pill-future"><span class="dot"></span>Futuro</span>';
+    return `<tr>
+      <td class="name">${(r[COL.TAREFA]||'').slice(0,44)}…</td>
+      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
+      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
+      <td class="mono">${fmtDate(ini)}</td>
+      <td class="mono" style="color:var(--amber)">${fmtDate(entrega)}</td>
+      <td style="text-align:center;color:var(--amber);font-weight:700">${Number(r[COL.ICAMENTO])||'—'}</td>
+      <td>${pill}</td>
+    </tr>`;
+  }).join('');
+
+  // Balance filters
+  const blocsAll=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  document.getElementById('balance-filters').innerHTML=['Todos',...blocsAll].map(b=>
+    `<button class="fbtn${filterBloco===b?' active':''}" onclick="setBalFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
+}
+
+function renderLinhaBalanco(){
+  const data=filterBloco==='Todos'?CRONO:CRONO.filter(r=>r[COL.BLOCO]===filterBloco);
+  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  const pavimentos=['3º','2º','1º','Térreo'];
+
+  // Datasets: each bloco is a "line" through paviments over time
+  const datasets=[];
+  blocos.forEach((b,bi)=>{
+    const bRows=data.filter(r=>r[COL.BLOCO]===b);
+    const points=pavimentos.map(pav=>{
+      const pavRows=bRows.filter(r=>r[COL.PAVIMENTO]===pav);
+      if(!pavRows.length) return null;
+      const ini=pavRows.map(r=>excelDate(r[COL.INICIO])).filter(Boolean).sort((a,c)=>a-c)[0];
+      const fim=pavRows.map(r=>excelDate(r[COL.FIM])).filter(Boolean).sort((a,c)=>c-a)[0];
+      return {x:ini?ini.toISOString().slice(0,10):null,y:PAV_ORDER[pav]??0,fim,pav,bloco:b};
+    }).filter(p=>p&&p.x);
+
+    if(!points.length) return;
+    datasets.push({
+      label:b,
+      data:points.map(p=>({x:p.x,y:p.y})),
+      borderColor:BLOCOS_PAL[b]||'#3d8ef8',
+      backgroundColor:(BLOCOS_PAL[b]||'#3d8ef8')+'33',
+      tension:.3,pointRadius:6,pointHoverRadius:8,
+      showLine:true,fill:false
+    });
+  });
+
+  destroyChart('balance');
+  charts.balance=new Chart(document.getElementById('balanceChart'),{
+    type:'scatter',
+    data:{datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8ca4c8',font:{size:11}}}},
+      scales:{
+        x:{type:'time',time:{unit:'month',displayFormats:{month:'MMM/yy'}},ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'},title:{display:true,text:'Tempo',color:'#4d6385'}},
+        y:{min:-0.5,max:3.5,ticks:{color:'#8ca4c8',font:{size:11},callback:v=>['Térreo','1º','2º','3º'][Math.round(v)]||''},grid:{color:'rgba(30,45,66,.4)'},title:{display:true,text:'Pavimento',color:'#4d6385'}}
+      }
+    }
+  });
+}
+
+function setBalFilter(b){filterBloco=b;renderLogistica();}
+window.setBalFilter=setBalFilter;
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: LEAN SCORE
+// ═══════════════════════════════════════════════════════════
+function renderLean(){
+  const data=CRONO;
+  const total=data.length;
+  const done=data.filter(r=>getStatus(r)==='Concluído').length;
+  const active=data.filter(r=>getStatus(r)==='Em Andamento').length;
+  const future=data.filter(r=>getStatus(r)==='Futuro').length;
+
+  const ppc=total>0?Math.round((done+active*0.5)/total*100):0;
+  const fluxo=active>0?Math.min(100,Math.round(active/Math.max(1,total)*1000)):0;
+  const atrasoRisk=data.filter(r=>{const fim=excelDate(r[COL.FIM]);return fim&&fim<TODAY&&getStatus(r)!=='Concluído';}).length;
+  const atrasoScore=Math.max(0,100-Math.round(atrasoRisk/total*500));
+  const leanScore=Math.round(ppc*0.4+fluxo*0.3+atrasoScore*0.3);
+
+  document.getElementById('lean-score-val').textContent=leanScore+'%';
+  document.getElementById('kpi-lean').innerHTML=`
+    <div class="kpi k-blue"><div class="kpi-label">PPC</div><div class="kpi-value">${ppc}%</div><div class="kpi-sub">% Planejado Concluído</div></div>
+    <div class="kpi k-amber"><div class="kpi-label">Fluxo Score</div><div class="kpi-value">${fluxo}</div><div class="kpi-sub">Atividades fluindo</div></div>
+    <div class="kpi k-rose"><div class="kpi-label">Riscos Atraso</div><div class="kpi-value">${atrasoRisk}</div><div class="kpi-sub">Atividades em risco</div></div>
+    <div class="kpi k-green"><div class="kpi-label">Confiabilidade</div><div class="kpi-value">${atrasoScore}%</div><div class="kpi-sub">Planejamento estável</div></div>
+  `;
+
+  document.getElementById('lean-components').innerHTML=[
+    ['PPC (40%)',ppc,'var(--blue)'],
+    ['Fluxo Contínuo (30%)',Math.min(100,fluxo),'var(--amber)'],
+    ['Controle de Atrasos (30%)',atrasoScore,'var(--emerald)']
+  ].map(([l,v,c])=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:12px;color:var(--text2)">${l}</span>
+        <span style="font-size:12px;font-weight:700;color:${c};font-family:var(--font-mono)">${v}%</span>
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${v}%;background:${c};border-radius:4px;transition:width .5s"></div>
+      </div>
+    </div>`).join('');
+
+  // Gauge
+  const gCtx=document.getElementById('leanGauge').getContext('2d');
+  const score=leanScore/100;
+  gCtx.clearRect(0,0,200,110);
+  gCtx.beginPath();gCtx.arc(100,100,80,Math.PI,2*Math.PI);gCtx.strokeStyle='#1d2a3f';gCtx.lineWidth=14;gCtx.stroke();
+  const grad=gCtx.createLinearGradient(20,100,180,100);
+  grad.addColorStop(0,'#ff3d6b');grad.addColorStop(.5,'#ffb320');grad.addColorStop(1,'#00e5a0');
+  gCtx.beginPath();gCtx.arc(100,100,80,Math.PI,Math.PI+score*Math.PI);gCtx.strokeStyle=grad;gCtx.lineWidth=14;gCtx.lineCap='round';gCtx.stroke();
+
+  // Heatmap
+  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
+  const pavimentos=['3º','2º','1º','Térreo'];
+  document.getElementById('heatmap-container').innerHTML=`
+    <div style="overflow-x:auto">
+      <table style="border-collapse:collapse;width:100%">
+        <thead><tr>
+          <th style="font-size:10px;color:var(--text3);padding:6px;text-align:left;font-family:var(--font-mono)">Pav.</th>
+          ${blocos.map(b=>`<th style="font-size:10px;color:var(--text3);padding:6px;text-align:center;font-family:var(--font-mono)">${b.replace('Bloco ','B')}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+        ${pavimentos.map(pav=>`<tr>
+          <td style="font-size:11px;color:var(--text2);padding:6px;font-family:var(--font-mono);font-weight:700">${pav}</td>
+          ${blocos.map(b=>{
+            const rows=data.filter(r=>r[COL.BLOCO]===b&&r[COL.PAVIMENTO]===pav);
+            const ativas=rows.filter(r=>getStatus(r)==='Em Andamento').length;
+            const futuras=rows.filter(r=>getStatus(r)==='Futuro').length;
+            const done=rows.filter(r=>getStatus(r)==='Concluído').length;
+            const total=rows.length;
+            if(!total) return `<td style="padding:4px"><div style="height:36px;border-radius:4px;background:var(--bg2);border:1px solid var(--border)"></div></td>`;
+            const intensity=ativas>0?1:done/total;
+            const col=ativas>0?`rgba(61,142,248,${0.15+intensity*0.7})`:done===total?`rgba(0,229,160,${0.15+0.7})`:`rgba(255,179,32,${0.1+intensity*0.5})`;
+            const textCol=ativas>0?'var(--blue)':done===total?'var(--emerald)':'var(--amber)';
+            return `<td style="padding:4px"><div style="height:36px;border-radius:4px;background:${col};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${textCol};font-family:var(--font-mono)">${total}</div></td>`;
+          }).join('')}
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  // Curva S
+  const mCum={planned:[],done:[]};
+  const mKeys=[];
+  const mPMap={},mDMap={};
+  data.forEach(r=>{
+    const d=excelDate(r[COL.INICIO]);if(!d) return;
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    mPMap[k]=(mPMap[k]||0)+1;
+    if(getStatus(r)==='Concluído'||getStatus(r)==='Em Andamento'){const fd=excelDate(r[COL.FIM]);if(fd){const fk=`${fd.getFullYear()}-${String(fd.getMonth()+1).padStart(2,'0')}`;mDMap[fk]=(mDMap[fk]||0)+1;}}
+  });
+  const allKeys=[...new Set([...Object.keys(mPMap),...Object.keys(mDMap)])].sort().slice(0,18);
+  let cumP=0,cumD=0;
+  const curvaDLabels=[],curvaP=[],curvaD=[];
+  allKeys.forEach(k=>{
+    cumP+=(mPMap[k]||0);cumD+=(mDMap[k]||0);
+    const[y,m]=k.split('-');
+    curvaDLabels.push(['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2));
+    curvaP.push(cumP);curvaD.push(cumD);
+  });
+  destroyChart('curvaS');
+  charts.curvaS=new Chart(document.getElementById('curvaSChart'),{
+    type:'line',
+    data:{labels:curvaDLabels,datasets:[
+      {label:'Planejado',data:curvaP,borderColor:'var(--blue)',backgroundColor:'rgba(61,142,248,.08)',fill:true,tension:.4,pointRadius:3},
+      {label:'Executado',data:curvaD,borderColor:'var(--emerald)',backgroundColor:'rgba(0,229,160,.06)',fill:true,tension:.4,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8ca4c8',font:{size:11}}}},
+      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
+  });
+
+  // Restrições (Last Planner)
+  const restricoes=[
+    {tipo:'Material faltando',icon:'📦',rows:CRONO.filter(r=>getStatus(r)==='Futuro'&&excelDate(r[COL.INICIO])&&(excelDate(r[COL.INICIO])-TODAY)/86400000<=3).slice(0,3)},
+    {tipo:'Atividade bloqueada',icon:'🚧',rows:CRONO.filter(r=>getStatus(r)==='Em Andamento'&&(Number(r[COL.ICAMENTO])||0)===0).slice(0,3)},
+    {tipo:'Içamento pendente',icon:'🏗️',rows:CRONO.filter(r=>getStatus(r)==='Futuro'&&(Number(r[COL.ICAMENTO])||0)>10).slice(0,3)},
+  ];
+  document.getElementById('restricoes-count').textContent=`${restricoes.reduce((a,r)=>a+r.rows.length,0)} restrições identificadas`;
+  document.getElementById('restricoes-container').innerHTML=restricoes.filter(r=>r.rows.length>0).map(r=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">${r.icon} ${r.tipo}</div>
+      ${r.rows.map(row=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;margin-bottom:4px">
+          <span class="btag" style="background:${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'}22;color:${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'};border:1px solid ${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'}44">${(row[COL.BLOCO]||'').replace('Bloco ','B')}</span>
+          <span style="font-size:12px;color:var(--text2);flex:1">${(row[COL.TAREFA]||'').slice(0,60)}</span>
+          <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${fmtDate(excelDate(row[COL.INICIO]))}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGE: ETIQUETAS
+// ═══════════════════════════════════════════════════════════
+let selectedRow=null;
+function renderEtiqueta(){
+  const data=CRONO;
+  const blocos=['Todos',...[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort()];
+  document.getElementById('etiqueta-bloco-filters').innerHTML=blocos.map(b=>
+    `<button class="fbtn${filterEtiquetaBloco===b?' active':''}" onclick="setEtqFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
+
+  const rows=(filterEtiquetaBloco==='Todos'?data:data.filter(r=>r[COL.BLOCO]===filterEtiquetaBloco)).slice(0,50);
+  document.getElementById('etiqueta-tbody').innerHTML=rows.map((r,i)=>{
+    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+    return `<tr>
+      <td class="name" title="${r[COL.TAREFA]}">${(r[COL.TAREFA]||'').slice(0,40)}${(r[COL.TAREFA]||'').length>40?'…':''}</td>
+      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
+      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
+      <td class="mono">${r[COL.PACOTE]||'—'}</td>
+      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
+      <td class="mono">${fmtDate(excelDate(r[COL.INICIO]))}</td>
+      <td><button onclick="selectRow(${i})" style="padding:4px 10px;background:var(--blue3);border:1px solid var(--blue2);border-radius:5px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer">Gerar</button></td>
+    </tr>`;
+  }).join('');
+}
+function setEtqFilter(b){filterEtiquetaBloco=b;renderEtiqueta();}
+window.setEtqFilter=setEtqFilter;
+function selectRow(i){
+  const rows=(filterEtiquetaBloco==='Todos'?CRONO:CRONO.filter(r=>r[COL.BLOCO]===filterEtiquetaBloco)).slice(0,50);
+  selectedRow=rows[i];
+  if(!selectedRow) return;
+  const disc=discBase(selectedRow[COL.DISCIPLINA])||'—';
+  const ini=fmtDate(excelDate(selectedRow[COL.INICIO]));
+  const entrega=fmtDate(addDays(excelDate(selectedRow[COL.INICIO])||TODAY,-2));
+  const codigo=`KIT-${(selectedRow[COL.BLOCO]||'').replace('Bloco ','B').replace(' ','')}-P${selectedRow[COL.PACOTE]||'0'}-${disc.slice(0,3).toUpperCase()}`;
+  document.getElementById('etiqueta-preview').innerHTML=`
+    <div class="etiqueta" id="etiqueta-print">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:8px">
+        <div style="width:28px;height:28px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px">LF</div>
+        <div class="etiqueta-title">LeanFlow · Kit Material</div>
+      </div>
+      <div class="etiqueta-qr">▪▪▪▪<br>QR<br>CODE<br>▪▪▪▪</div>
+      <div class="etiqueta-field"><span>Código:</span> ${codigo}</div>
+      <div class="etiqueta-field"><span>Bloco:</span> ${selectedRow[COL.BLOCO]||'—'}</div>
+      <div class="etiqueta-field"><span>Pavimento:</span> ${selectedRow[COL.PAVIMENTO]||'—'}</div>
+      <div class="etiqueta-field"><span>Pacote:</span> ${selectedRow[COL.PACOTE]||'—'}</div>
+      <div class="etiqueta-field"><span>Disciplina:</span> ${disc}</div>
+      <div class="etiqueta-field"><span>Tarefa:</span> ${(selectedRow[COL.TAREFA]||'').slice(0,50)}</div>
+      <div class="etiqueta-field"><span>Içamento:</span> ${Number(selectedRow[COL.ICAMENTO])||0} un</div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #999">
+        <div class="etiqueta-field"><span>Início Atividade:</span> ${ini}</div>
+        <div class="etiqueta-field"><span>Entregar até:</span> ${entrega}</div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:#888;text-align:center">${codigo} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+    </div>`;
+}
+window.selectRow=selectRow;
+function printEtiqueta(){
+  const el=document.getElementById('etiqueta-print');
+  if(!el){alert('Selecione uma atividade primeiro.');return;}
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>Etiqueta</title><style>body{margin:0;padding:20px;font-family:monospace}*{box-sizing:border-box}</style></head><body>${el.outerHTML}</body></html>`);
+  w.document.close();w.print();
+}
+window.printEtiqueta=printEtiqueta;
+
+// ═══════════════════════════════════════════════════════════
+// UPLOAD
+// ═══════════════════════════════════════════════════════════
+document.getElementById('uploadCrono').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true,defval:null});
+      if(!rows.length){alert('Arquivo vazio.');return;}
+      renderAll(rows);
+    }catch(err){alert('Erro: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);this.value='';
+});
+document.getElementById('uploadKits').addEventListener('change',function(e){
+  const file=e.target.files[0];if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
+      KITS=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true,defval:null});
+      alert(`✅ ${KITS.length} kits carregados com sucesso!`);
+    }catch(err){alert('Erro: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);this.value='';
+});
+
+// ═══════════════════════════════════════════════════════════
+// DADOS DEMO (substituídos pelo upload)
+// ═══════════════════════════════════════════════════════════
+const DEMO=[
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:2,Tarefa:'Demolição e retirada de portas e marcenaria',Disciplina:'Estruturas(8)',Início:new Date('2026-02-02'),Fim:new Date('2026-02-13'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:2,Tarefa:'Demolição de elétrica e network',Disciplina:'Elétrica(4)',Início:new Date('2026-02-02'),Fim:new Date('2026-02-13'),'Duração_dias_úteis':10,'Içamento_total':1},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:3,Tarefa:'Demolição e retirada de louças e metais',Disciplina:'Hidráulica(10)',Início:new Date('2026-02-09'),Fim:new Date('2026-02-20'),'Duração_dias_úteis':10,'Içamento_total':5},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:3,Tarefa:'Demolição e retirada de vidros e pisos',Disciplina:'Estruturas(10)',Início:new Date('2026-02-09'),Fim:new Date('2026-02-20'),'Duração_dias_úteis':10,'Içamento_total':4},
+  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:5,Tarefa:'Levante de paredes e regularização de banheiros',Disciplina:'Revestimento(4)',Início:new Date('2026-02-23'),Fim:new Date('2026-02-27'),'Duração_dias_úteis':5,'Içamento_total':4},
+  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:6,Tarefa:'Instalação hidráulica geral',Disciplina:'Hidráulica(6)',Início:new Date('2026-04-20'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':25,'Içamento_total':3},
+  {Bloco:'Bloco 20',Pavimento:'1º',Pacote:8,Tarefa:'Revestimento de piso e parede',Disciplina:'Revestimento(4)',Início:new Date('2026-05-10'),Fim:new Date('2026-06-01'),'Duração_dias_úteis':15,'Içamento_total':5},
+  {Bloco:'Bloco 20',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamentos gerais e pintura',Disciplina:'Acabamentos(6)',Início:new Date('2026-07-01'),Fim:new Date('2026-08-01'),'Duração_dias_úteis':22,'Içamento_total':8},
+  {Bloco:'Bloco 20',Pavimento:'Térreo',Pacote:14,Tarefa:'Instalação de esquadrias e vidros',Disciplina:'Contratadas',Início:new Date('2026-07-15'),Fim:new Date('2026-08-11'),'Duração_dias_úteis':20,'Içamento_total':2},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Cabeamento para energia elétrica geral',Disciplina:'Elétrica(4)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Instalação de ar condicionado',Disciplina:'Hidráulica(5)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':6},
+  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Revestimento de piso laminado',Disciplina:'Estruturas',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
+  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:11,Tarefa:'Preparação e 1ª demão de pintura',Disciplina:'Acabamentos(20)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
+  {Bloco:'Bloco 20',Pavimento:'1º',Pacote:9,Tarefa:'Forro de Drywall estrutura e emplacamento',Disciplina:'Acabamentos(9)',Início:new Date('2026-05-11'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':10,'Içamento_total':7},
+  {Bloco:'Bloco 19',Pavimento:'3º',Pacote:2,Tarefa:'Demolição estrutural interna',Disciplina:'Estruturas(8)',Início:new Date('2026-04-06'),Fim:new Date('2026-04-17'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 19',Pavimento:'3º',Pacote:3,Tarefa:'Remoção de instalações hidráulicas antigas',Disciplina:'Hidráulica(6)',Início:new Date('2026-04-13'),Fim:new Date('2026-04-24'),'Duração_dias_úteis':10,'Içamento_total':5},
+  {Bloco:'Bloco 19',Pavimento:'2º',Pacote:5,Tarefa:'Instalação elétrica provisória',Disciplina:'Elétrica(4)',Início:new Date('2026-05-01'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':16,'Içamento_total':2},
+  {Bloco:'Bloco 19',Pavimento:'2º',Pacote:6,Tarefa:'Revestimento cerâmico de piso',Disciplina:'Revestimento(4)',Início:new Date('2026-05-18'),Fim:new Date('2026-06-12'),'Duração_dias_úteis':20,'Içamento_total':6},
+  {Bloco:'Bloco 19',Pavimento:'1º',Pacote:7,Tarefa:'Impermeabilização de banheiros',Disciplina:'Hidráulica(4)',Início:new Date('2026-06-01'),Fim:new Date('2026-07-01'),'Duração_dias_úteis':22,'Içamento_total':3},
+  {Bloco:'Bloco 19',Pavimento:'Térreo',Pacote:10,Tarefa:'Pintura geral interna',Disciplina:'Acabamentos(6)',Início:new Date('2026-08-01'),Fim:new Date('2026-09-01'),'Duração_dias_úteis':22,'Içamento_total':4},
+  {Bloco:'Bloco 18',Pavimento:'3º',Pacote:2,Tarefa:'Demolição inicial Bloco 18',Disciplina:'Estruturas(10)',Início:new Date('2026-06-08'),Fim:new Date('2026-06-20'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 18',Pavimento:'2º',Pacote:4,Tarefa:'Instalações elétricas Bloco 18',Disciplina:'Elétrica(3)',Início:new Date('2026-07-06'),Fim:new Date('2026-07-31'),'Duração_dias_úteis':20,'Içamento_total':4},
+  {Bloco:'Bloco 18',Pavimento:'1º',Pacote:7,Tarefa:'Revestimento e acabamento Bloco 18',Disciplina:'Revestimento(4)',Início:new Date('2026-09-01'),Fim:new Date('2026-10-01'),'Duração_dias_úteis':22,'Içamento_total':7},
+  {Bloco:'Bloco 18',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamentos finais Bloco 18',Disciplina:'Acabamentos(20)',Início:new Date('2026-11-01'),Fim:new Date('2026-12-15'),'Duração_dias_úteis':30,'Içamento_total':10},
+  {Bloco:'Bloco 17',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 17',Disciplina:'Estruturas(8)',Início:new Date('2026-08-10'),Fim:new Date('2026-08-24'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 17',Pavimento:'2º',Pacote:5,Tarefa:'Hidráulica Bloco 17',Disciplina:'Hidráulica(6)',Início:new Date('2026-09-14'),Fim:new Date('2026-10-09'),'Duração_dias_úteis':20,'Içamento_total':5},
+  {Bloco:'Bloco 17',Pavimento:'1º',Pacote:9,Tarefa:'Elétrica Bloco 17',Disciplina:'Elétrica(4)',Início:new Date('2026-10-05'),Fim:new Date('2026-11-06'),'Duração_dias_úteis':25,'Içamento_total':3},
+  {Bloco:'Bloco 17',Pavimento:'Térreo',Pacote:14,Tarefa:'Acabamento Bloco 17',Disciplina:'Acabamentos(12)',Início:new Date('2026-12-07'),Fim:new Date('2027-01-22'),'Duração_dias_úteis':30,'Içamento_total':8},
+  {Bloco:'Bloco 21',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 21',Disciplina:'Estruturas(8)',Início:new Date('2026-10-12'),Fim:new Date('2026-10-26'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 21',Pavimento:'2º',Pacote:5,Tarefa:'Instalações Bloco 21',Disciplina:'Hidráulica(4)',Início:new Date('2026-11-16'),Fim:new Date('2026-12-11'),'Duração_dias_úteis':20,'Içamento_total':5},
+  {Bloco:'Bloco 21',Pavimento:'1º',Pacote:9,Tarefa:'Revestimento Bloco 21',Disciplina:'Revestimento(4)',Início:new Date('2027-01-04'),Fim:new Date('2027-02-05'),'Duração_dias_úteis':25,'Içamento_total':7},
+  {Bloco:'Bloco 22',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 22',Disciplina:'Estruturas(10)',Início:new Date('2027-02-08'),Fim:new Date('2027-02-22'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 22',Pavimento:'2º',Pacote:4,Tarefa:'Elétrica Bloco 22',Disciplina:'Elétrica(3)',Início:new Date('2027-03-08'),Fim:new Date('2027-04-02'),'Duração_dias_úteis':20,'Içamento_total':4},
+  {Bloco:'Bloco 22',Pavimento:'Térreo',Pacote:10,Tarefa:'Acabamento Bloco 22',Disciplina:'Acabamentos(6)',Início:new Date('2027-07-01'),Fim:new Date('2027-08-01'),'Duração_dias_úteis':22,'Içamento_total':8},
+  {Bloco:'Bloco 23',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 23',Disciplina:'Hidráulica(6)',Início:new Date('2027-04-05'),Fim:new Date('2027-04-19'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 23',Pavimento:'2º',Pacote:5,Tarefa:'Estrutura Bloco 23',Disciplina:'Estruturas(8)',Início:new Date('2027-05-05'),Fim:new Date('2027-05-30'),'Duração_dias_úteis':20,'Içamento_total':5},
+  {Bloco:'Bloco 23',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamento Bloco 23',Disciplina:'Acabamentos(20)',Início:new Date('2027-08-04'),Fim:new Date('2027-09-05'),'Duração_dias_úteis':25,'Içamento_total':9},
+  {Bloco:'Bloco 24',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 24',Disciplina:'Acabamentos(6)',Início:new Date('2027-05-31'),Fim:new Date('2027-06-14'),'Duração_dias_úteis':10,'Içamento_total':36},
+  {Bloco:'Bloco 24',Pavimento:'2º',Pacote:5,Tarefa:'Hidráulica Bloco 24',Disciplina:'Hidráulica(6)',Início:new Date('2027-07-07'),Fim:new Date('2027-08-01'),'Duração_dias_úteis':20,'Içamento_total':6},
+  {Bloco:'Bloco 24',Pavimento:'Térreo',Pacote:14,Tarefa:'Finalização Bloco 24',Disciplina:'Contratadas',Início:new Date('2027-11-01'),Fim:new Date('2027-12-31'),'Duração_dias_úteis':40,'Içamento_total':10},
+];
+renderAll(DEMO);
+</script>
+</body>
+</html>
