@@ -1,1 +1,17 @@
-{"version":1,"generatedAt":"2026-05-23T18:11:50","source":"doc","endpoints":{"activities":"activities.json","kitItems":"kit-items.json","documents":"documents.json"},"counts":{"activities":1704,"kitItems":893,"documents":2}}
+{
+  "cronograma": [
+    "Cronograma Residenciais.xlsx"
+  ],
+  "kits": [
+    "Kit - Acabamentos Lean Construction.xlsx",
+    "Kit - Elétrica Lean Construction (rev. 07.05.26).xlsx",
+    "Kit - Estruturas Lean Construction.xlsx",
+    "Kit - Hidráulica Lean Construction 07.05.xlsx",
+    "Kit - Hidráulica Lean Construction.xlsx",
+    "Kit - Revestimento Lean Construction.xlsx"
+  ],
+  "pdfs": [
+    "atualização de cronograma.pdf",
+    "Nomenclatura dos Kits - Lean Construction.pdf"
+  ]
+}
