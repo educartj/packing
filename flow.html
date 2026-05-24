@@ -3,1441 +3,1558 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LeanFlow · Controle Lean Construction</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<title>LeanFlow | Controle Lean Construction</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg0:#070a0f;
-  --bg1:#0c1018;
-  --bg2:#111820;
-  --bg3:#172030;
-  --bg4:#1d2a3f;
-  --bg5:#243348;
-  --border:#1e2d42;
-  --border2:#2a3f5c;
-  --text1:#e8f0fe;
-  --text2:#8ca4c8;
-  --text3:#4d6385;
-  --text4:#2e4060;
-  --blue:#3d8ef8;
-  --blue2:#1a5fd4;
-  --blue3:#0d3a8a;
-  --cyan:#00d4ff;
-  --cyan2:#0099cc;
-  --emerald:#00e5a0;
-  --emerald2:#00a870;
-  --amber:#ffb320;
-  --amber2:#cc8800;
-  --rose:#ff3d6b;
-  --rose2:#cc1a47;
-  --violet:#a855f7;
-  --violet2:#7c22cc;
-  --orange:#ff7a2f;
-  --font-head:'Syne',sans-serif;
-  --font-mono:'JetBrains Mono',monospace;
+:root {
+  --bg: #070b12;
+  --panel: #0d1420;
+  --panel-2: #111b2b;
+  --panel-3: #162236;
+  --line: #23344f;
+  --muted: #7f93b3;
+  --text: #edf4ff;
+  --blue: #36a3ff;
+  --green: #22d48a;
+  --yellow: #ffbf3d;
+  --red: #ff4d6d;
+  --violet: #a676ff;
+  --cyan: #20d8ff;
+  --shadow: 0 22px 80px rgba(0, 0, 0, .35);
 }
-html,body{background:var(--bg0);color:var(--text1);font-family:var(--font-head);min-height:100vh;font-size:14px}
-
-/* ─── SCROLLBAR ─────────────────────────────────────── */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:var(--bg1)}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-/* ─── GRID NOISE BACKGROUND ─────────────────────────── */
-body::before{content:'';position:fixed;inset:0;background-image:
-  linear-gradient(rgba(61,142,248,.03) 1px,transparent 1px),
-  linear-gradient(90deg,rgba(61,142,248,.03) 1px,transparent 1px);
-  background-size:32px 32px;pointer-events:none;z-index:0}
-
-/* ─── LAYOUT ─────────────────────────────────────────── */
-.app{display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1}
-
-/* ─── TOP BAR ────────────────────────────────────────── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:60px;border-bottom:1px solid var(--border);background:rgba(7,10,15,.9);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;gap:12px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--cyan));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;letter-spacing:-1px;font-family:var(--font-head)}
-.brand-name{font-size:16px;font-weight:800;letter-spacing:-.5px;color:var(--text1)}
-.brand-sub{font-size:10px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.5px;margin-top:1px}
-.topbar-center{display:flex;align-items:center;gap:4px;flex:1;justify-content:center;max-width:700px;margin:0 auto}
-.nav-tab{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;letter-spacing:.2px;white-space:nowrap}
-.nav-tab:hover{color:var(--text2);background:var(--bg3)}
-.nav-tab.active{background:var(--blue3);color:var(--blue);border:1px solid var(--blue2)}
-.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.today-chip{padding:4px 12px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:20px;font-size:11px;color:var(--cyan);font-family:var(--font-mono)}
-.upload-area{display:flex;gap:6px}
-.upload-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;transition:all .18s;position:relative;overflow:hidden;white-space:nowrap}
-.upload-btn:hover{background:var(--bg4);border-color:var(--blue2)}
-.upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-.upload-btn.accent{background:var(--blue3);border-color:var(--blue2);color:var(--cyan)}
-
-/* ─── CONTENT ────────────────────────────────────────── */
-.page{display:none;padding:20px 24px;flex:1}
-.page.active{display:block}
-
-/* ─── KPI ROW ────────────────────────────────────────── */
-.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:18px}
-.kpi{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
-.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.kpi.k-blue::before{background:linear-gradient(90deg,var(--blue),var(--cyan))}
-.kpi.k-green::before{background:linear-gradient(90deg,var(--emerald),#00ff88)}
-.kpi.k-amber::before{background:linear-gradient(90deg,var(--amber),var(--orange))}
-.kpi.k-rose::before{background:linear-gradient(90deg,var(--rose),var(--violet))}
-.kpi.k-violet::before{background:linear-gradient(90deg,var(--violet),var(--blue))}
-.kpi.k-cyan::before{background:linear-gradient(90deg,var(--cyan),var(--emerald))}
-.kpi-label{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono)}
-.kpi-value{font-size:30px;font-weight:800;line-height:1;letter-spacing:-1px}
-.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;font-family:var(--font-mono)}
-.kpi.k-blue .kpi-value{color:var(--blue)}
-.kpi.k-green .kpi-value{color:var(--emerald)}
-.kpi.k-amber .kpi-value{color:var(--amber)}
-.kpi.k-rose .kpi-value{color:var(--rose)}
-.kpi.k-violet .kpi-value{color:var(--violet)}
-.kpi.k-cyan .kpi-value{color:var(--cyan)}
-
-/* ─── GRID LAYOUTS ────────────────────────────────────── */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-.grid-13{display:grid;grid-template-columns:1fr 3fr;gap:14px;margin-bottom:14px}
-.grid-31{display:grid;grid-template-columns:3fr 1fr;gap:14px;margin-bottom:14px}
-
-/* ─── CARD ────────────────────────────────────────────── */
-.card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:18px}
-.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
-.card-title{font-size:13px;font-weight:700;color:var(--text1);letter-spacing:.1px}
-.card-sub{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
-.chart-box{position:relative;width:100%}
-
-/* ─── FILTER BAR ─────────────────────────────────────── */
-.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.fbtn{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--bg2);color:var(--text3);transition:all .12s;letter-spacing:.2px}
-.fbtn:hover{color:var(--text2);border-color:var(--border2)}
-.fbtn.active{background:var(--blue3);border-color:var(--blue2);color:var(--blue)}
-.fbtn.active-green{background:rgba(0,229,160,.1);border-color:var(--emerald2);color:var(--emerald)}
-.fbtn.active-amber{background:rgba(255,179,32,.1);border-color:var(--amber2);color:var(--amber)}
-
-/* ─── TABLE ──────────────────────────────────────────── */
-.data-table{width:100%;border-collapse:collapse}
-.data-table th{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-family:var(--font-mono)}
-.data-table td{font-size:12px;color:var(--text2);padding:8px 10px;border-bottom:1px solid rgba(30,45,66,.5);vertical-align:middle}
-.data-table tbody tr:hover td{background:var(--bg2)}
-.data-table tbody tr:last-child td{border-bottom:none}
-.data-table td.name{color:var(--text1);font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.data-table td.mono{font-family:var(--font-mono);font-size:11px}
-
-/* ─── STATUS PILLS ───────────────────────────────────── */
-.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
-.pill-done{background:rgba(0,229,160,.1);color:var(--emerald);border:1px solid rgba(0,229,160,.25)}
-.pill-active{background:rgba(61,142,248,.1);color:var(--blue);border:1px solid rgba(61,142,248,.25)}
-.pill-future{background:rgba(77,99,133,.12);color:var(--text3);border:1px solid var(--border)}
-.pill-alert{background:rgba(255,61,107,.1);color:var(--rose);border:1px solid rgba(255,61,107,.25)}
-.pill-warn{background:rgba(255,179,32,.1);color:var(--amber);border:1px solid rgba(255,179,32,.25)}
-.pill-sep{background:rgba(168,85,247,.1);color:var(--violet);border:1px solid rgba(168,85,247,.25)}
-.dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-
-/* ─── BLOCO TAG ──────────────────────────────────────── */
-.btag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px;font-family:var(--font-mono)}
-
-/* ─── PROGRESS BAR ───────────────────────────────────── */
-.progress-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.p-label{font-size:12px;color:var(--text2);width:80px;flex-shrink:0;font-weight:600}
-.p-track{flex:1;height:20px;background:var(--bg3);border-radius:4px;position:relative;overflow:hidden}
-.p-fill{height:100%;border-radius:4px;position:absolute;display:flex;align-items:center;padding:0 8px;transition:width .5s ease}
-.p-fill-text{font-size:10px;font-weight:700;color:#070a0f}
-.p-pct{font-size:11px;color:var(--text3);width:36px;text-align:right;flex-shrink:0;font-family:var(--font-mono)}
-
-/* ─── KANBAN ─────────────────────────────────────────── */
-.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;overflow-x:auto;min-height:300px}
-.kan-col{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;min-height:300px}
-.kan-col-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.kan-col-name{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
-.kan-col-count{font-size:11px;color:var(--text3);font-family:var(--font-mono)}
-.kan-card{background:var(--bg1);border:1px solid var(--border2);border-radius:7px;padding:10px;margin-bottom:7px;cursor:grab;transition:all .15s;position:relative}
-.kan-card:hover{border-color:var(--blue2);transform:translateY(-1px)}
-.kan-card.dragging{opacity:.5;cursor:grabbing}
-.kan-card-name{font-size:12px;font-weight:600;color:var(--text1);margin-bottom:5px;line-height:1.3}
-.kan-card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-.kan-card-tag{font-size:10px;padding:2px 6px;border-radius:3px;font-family:var(--font-mono);color:var(--text3);background:var(--bg3)}
-
-/* ─── CHECKLIST ──────────────────────────────────────── */
-.check-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:7px;margin-bottom:6px;background:var(--bg2);border:1px solid var(--border);cursor:pointer;transition:all .12s}
-.check-item:hover{border-color:var(--border2)}
-.check-item.checked{opacity:.6}
-.check-item.checked .check-label{text-decoration:line-through;color:var(--text3)}
-.check-box{width:18px;height:18px;border-radius:4px;border:2px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
-.check-item.checked .check-box{background:var(--emerald);border-color:var(--emerald);color:#fff}
-.check-label{font-size:13px;font-weight:600;color:var(--text1)}
-.check-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
-
-/* ─── ALERT BOX ──────────────────────────────────────── */
-.alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;margin-bottom:8px;border-left:3px solid}
-.alert-item.critical{background:rgba(255,61,107,.06);border-color:var(--rose)}
-.alert-item.warn{background:rgba(255,179,32,.06);border-color:var(--amber)}
-.alert-item.info{background:rgba(61,142,248,.06);border-color:var(--blue)}
-.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
-.alert-text{font-size:12px;color:var(--text2);line-height:1.4}
-.alert-text strong{color:var(--text1);font-weight:700}
-
-/* ─── PLANO SEMANAL ──────────────────────────────────── */
-.semana-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:14px;padding-bottom:4px}
-.semana-day{flex-shrink:0;width:130px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px}
-.semana-day.today-col{border-color:var(--blue2);background:var(--blue3)}
-.semana-day-hdr{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-family:var(--font-mono)}
-.semana-day.today-col .semana-day-hdr{color:var(--blue)}
-.semana-item{font-size:11px;color:var(--text2);padding:5px 7px;border-radius:4px;margin-bottom:4px;background:var(--bg1);border:1px solid var(--border)}
-.semana-item.sep{border-color:rgba(168,85,247,.3);color:var(--violet)}
-.semana-item.del{border-color:rgba(0,229,160,.3);color:var(--emerald)}
-.semana-item.ini{border-color:rgba(61,142,248,.3);color:var(--blue)}
-
-/* ─── LINHA DE BALANÇO ───────────────────────────────── */
-#balanceChart{width:100%;height:300px}
-
-/* ─── ETIQUETA ───────────────────────────────────────── */
-.etiqueta{background:#fff;color:#111;border-radius:10px;padding:16px;font-family:var(--font-mono);max-width:280px;border:2px solid #ddd;font-size:12px}
-.etiqueta-title{font-size:16px;font-weight:800;margin-bottom:8px;font-family:var(--font-head)}
-.etiqueta-qr{width:80px;height:80px;background:#111;border-radius:4px;margin:8px 0;display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;text-align:center}
-.etiqueta-field{margin-bottom:4px}
-.etiqueta-field span{font-weight:700}
-
-/* ─── LEAN SCORE ─────────────────────────────────────── */
-.lean-score-ring{display:flex;flex-direction:column;align-items:center;gap:6px}
-.lean-score-value{font-size:48px;font-weight:800;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-3px;line-height:1}
-.lean-score-label{font-size:11px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.5px}
-
-/* ─── FLOW ───────────────────────────────────────────── */
-.flow-steps{display:flex;gap:0;margin:12px 0;overflow-x:auto}
-.flow-step{flex:1;min-width:90px;text-align:center;position:relative}
-.flow-step::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px}
-.flow-step:last-child::after{display:none}
-.flow-step-icon{font-size:20px;margin-bottom:4px}
-.flow-step-name{font-size:10px;color:var(--text3);font-weight:700;letter-spacing:.3px;text-transform:uppercase;font-family:var(--font-mono)}
-.flow-step.flow-done .flow-step-name{color:var(--emerald)}
-.flow-step.flow-active .flow-step-name{color:var(--blue)}
-.flow-step-count{font-size:15px;font-weight:800;margin-bottom:2px}
-.flow-step.flow-done .flow-step-count{color:var(--emerald)}
-.flow-step.flow-active .flow-step-count{color:var(--blue)}
-.flow-step.flow-future .flow-step-count{color:var(--text4)}
-
-/* ─── RESPONSIVE ─────────────────────────────────────── */
-@media(max-width:900px){
-  .grid-2,.grid-3,.grid-13,.grid-31{grid-template-columns:1fr}
-  .kanban{grid-template-columns:repeat(3,1fr)}
-  .topbar-center{display:none}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(54, 163, 255, .17), transparent 34%),
+    radial-gradient(circle at 80% 8%, rgba(34, 212, 138, .12), transparent 28%),
+    linear-gradient(180deg, #080d15, var(--bg));
+  font: 14px/1.45 Inter, "Segoe UI", Arial, sans-serif;
 }
-@media(max-width:600px){
-  .kpi-row{grid-template-columns:repeat(2,1fr)}
-  .topbar{padding:0 12px;height:auto;padding-top:8px;padding-bottom:8px}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+.app { min-height: 100vh; padding-left: 0; }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(340px, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  background: rgba(7, 11, 18, .86);
+  border-bottom: 1px solid rgba(35, 52, 79, .8);
+  backdrop-filter: blur(18px);
 }
-
-/* ─── ANIMATIONS ─────────────────────────────────────── */
-.page.active .kpi{animation:fadeUp .3s ease both}
-.page.active .kpi:nth-child(2){animation-delay:.04s}
-.page.active .kpi:nth-child(3){animation-delay:.08s}
-.page.active .kpi:nth-child(4){animation-delay:.12s}
-.page.active .kpi:nth-child(5){animation-delay:.16s}
-.page.active .kpi:nth-child(6){animation-delay:.20s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
-.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-size:14px;gap:10px}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #06111f;
+  font-weight: 900;
+  letter-spacing: -.06em;
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+}
+.brand-title { font-size: 18px; font-weight: 850; letter-spacing: -.02em; }
+.brand-sub { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(84px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(35, 52, 79, .9);
+  border-radius: 12px;
+  background: rgba(8, 16, 28, .72);
+}
+.tab {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: 8px 12px;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 750;
+  min-height: 38px;
+}
+.tab:hover { color: var(--text); background: rgba(54, 163, 255, .07); }
+.tab.active { color: var(--cyan); background: rgba(54, 163, 255, .14); border-color: rgba(54, 163, 255, .34); box-shadow: inset 0 0 0 1px rgba(32, 216, 255, .08); }
+.uploads { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.upload {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: var(--panel-2);
+  border-radius: 9px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.upload.primary { border-color: rgba(32, 216, 255, .4); color: var(--cyan); background: rgba(54, 163, 255, .14); }
+.upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.page { display: none; padding: 22px; max-width: 1820px; margin: 0 auto; width: 100%; }
+.page.active { display: block; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.panel {
+  background: linear-gradient(180deg, rgba(17, 27, 43, .96), rgba(13, 20, 32, .96));
+  border: 1px solid rgba(35, 52, 79, .86);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.panel.pad { padding: 18px; }
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 52px); line-height: 1; letter-spacing: -.06em; }
+h2 { font-size: 16px; letter-spacing: -.02em; }
+.hint { color: var(--muted); font-size: 12px; }
+.statusline { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: rgba(17, 27, 43, .72);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.chip.blue { color: var(--blue); border-color: rgba(54, 163, 255, .28); background: rgba(54, 163, 255, .1); }
+.chip.green { color: var(--green); border-color: rgba(34, 212, 138, .28); background: rgba(34, 212, 138, .1); }
+.chip.yellow { color: var(--yellow); border-color: rgba(255, 191, 61, .28); background: rgba(255, 191, 61, .1); }
+.chip.red { color: var(--red); border-color: rgba(255, 77, 109, .28); background: rgba(255, 77, 109, .1); }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi {
+  padding: 14px;
+  border-radius: 11px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  min-height: 106px;
+}
+.kpi-label { color: var(--muted); text-transform: uppercase; font-size: 10px; letter-spacing: .12em; font-weight: 850; }
+.kpi-value { margin-top: 8px; font-size: 31px; line-height: 1; font-weight: 900; letter-spacing: -.05em; }
+.kpi-sub { color: var(--muted); font-size: 11px; margin-top: 8px; }
+.blue { color: var(--blue); }
+.green { color: var(--green); }
+.yellow { color: var(--yellow); }
+.red { color: var(--red); }
+.violet { color: var(--violet); }
+.cyan { color: var(--cyan); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1.1fr .9fr .9fr; gap: 16px; margin-bottom: 16px; }
+.chartbox { height: 260px; position: relative; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.field {
+  min-width: 130px;
+  border: 1px solid var(--line);
+  background: #08101c;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.field.search { flex: 1; min-width: 220px; }
+.btn {
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: 800;
+}
+.btn.good { color: var(--green); border-color: rgba(34, 212, 138, .35); }
+.tablewrap { overflow: auto; border-radius: 10px; border: 1px solid var(--line); }
+table { width: 100%; border-collapse: collapse; min-width: 880px; }
+th, td { border-bottom: 1px solid rgba(35, 52, 79, .72); padding: 10px; text-align: left; vertical-align: top; }
+th { color: var(--muted); background: #0b1220; font-size: 10px; text-transform: uppercase; letter-spacing: .09em; position: sticky; top: 0; }
+td { color: #dce8fb; font-size: 12px; }
+tbody tr:hover td { background: rgba(54, 163, 255, .05); }
+.mono { font-family: "Cascadia Mono", "Consolas", monospace; }
+.rank { font-size: 20px; font-weight: 900; }
+.scorebar { min-width: 120px; height: 8px; border-radius: 99px; background: #07101d; overflow: hidden; margin-top: 5px; }
+.scorefill { height: 100%; border-radius: 99px; background: var(--blue); }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.pill.ok { color: var(--green); border-color: rgba(34, 212, 138, .3); background: rgba(34, 212, 138, .1); }
+.pill.warn { color: var(--yellow); border-color: rgba(255, 191, 61, .32); background: rgba(255, 191, 61, .1); }
+.pill.bad { color: var(--red); border-color: rgba(255, 77, 109, .34); background: rgba(255, 77, 109, .1); }
+.pill.info { color: var(--blue); border-color: rgba(54, 163, 255, .32); background: rgba(54, 163, 255, .1); }
+.workflow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(170px, 1fr));
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.lane {
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(8, 16, 28, .7);
+  padding: 10px;
+}
+.lane-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.kan-card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 9px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+.kan-card:hover { border-color: rgba(54, 163, 255, .45); }
+.kan-title { font-size: 12px; font-weight: 850; margin-bottom: 6px; }
+.kan-meta { display: flex; gap: 5px; flex-wrap: wrap; }
+.mini { font-size: 10px; color: var(--muted); background: var(--panel-3); padding: 2px 6px; border-radius: 5px; }
+.control-row { display: grid; grid-template-columns: 1fr 120px 72px 72px 180px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.control-row label { color: var(--muted); font-size: 12px; }
+.control-row textarea { resize: vertical; min-height: 34px; }
+.doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.doc-card { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.empty {
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: rgba(8, 16, 28, .48);
+}
+.loading main { opacity: .55; }
+.health-rail {
+  position: fixed;
+  right: 0;
+  top: 42%;
+  z-index: 45;
+  transform: translateY(-50%);
+}
+.health-toggle {
+  width: 42px;
+  height: 44px;
+  border: 1px solid rgba(35, 52, 79, .95);
+  border-right: 0;
+  border-radius: 14px 0 0 14px;
+  background: rgba(13, 20, 32, .94);
+  color: var(--cyan);
+  font-weight: 900;
+  font-size: 18px;
+  box-shadow: var(--shadow);
+}
+.health-toggle.ok { color: var(--green); }
+.health-toggle.warn { color: var(--yellow); }
+.health-toggle.bad { color: var(--red); }
+.health-drawer {
+  position: fixed;
+  top: 74px;
+  right: 12px;
+  z-index: 44;
+  width: min(420px, calc(100vw - 24px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  transform: translateX(calc(100% + 24px));
+  transition: transform .22s ease;
+}
+.health-drawer.open { transform: translateX(0); }
+.load-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(4, 8, 14, .72);
+  backdrop-filter: blur(12px);
+}
+.load-overlay.show { display: flex; }
+.load-card {
+  width: min(520px, 100%);
+  border: 1px solid rgba(35, 52, 79, .95);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(17, 27, 43, .98), rgba(8, 16, 28, .98));
+  box-shadow: var(--shadow);
+  padding: 22px;
+}
+.load-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 14px; }
+.load-percent { font-size: 42px; font-weight: 950; letter-spacing: -.06em; color: var(--cyan); }
+.load-bar { height: 10px; background: #06101c; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.load-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .25s ease; }
+.load-steps { display: grid; gap: 8px; margin-top: 16px; }
+.load-step { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12px; }
+.load-step strong { color: var(--text); }
+@media (max-width: 1200px) {
+  .hero, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(3, 1fr); }
+  .topbar { grid-template-columns: 1fr; align-items: stretch; }
+  .tabs { grid-template-columns: repeat(3, 1fr); }
+  .uploads { justify-content: flex-start; }
+}
+@media (max-width: 760px) {
+  .page { padding: 14px; }
+  .topbar { position: static; padding: 12px; }
+  .brand, .uploads { width: 100%; }
+  .tabs { display: flex; overflow-x: auto; }
+  .tab { flex: 0 0 auto; }
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .control-row { grid-template-columns: 1fr; }
+  h1 { font-size: 30px; }
+}
+@media (max-width: 520px) {
+  .kpis { grid-template-columns: 1fr; }
+  .upload { flex: 1 1 calc(50% - 8px); text-align: center; }
+  .chartbox { height: 220px; }
+}
 </style>
 </head>
 <body>
 <div class="app">
-
-<!-- ═══ TOP BAR ════════════════════════════════════════════ -->
-<div class="topbar">
-  <div class="brand">
-    <div class="brand-icon">LF</div>
-    <div>
-      <div class="brand-name">LeanFlow</div>
-      <div class="brand-sub">LEAN CONSTRUCTION</div>
-    </div>
-  </div>
-  <div class="topbar-center" id="nav-tabs">
-    <button class="nav-tab active" onclick="goPage('overview')">Visão Geral</button>
-    <button class="nav-tab" onclick="goPage('kits')">Kits & Fluxo</button>
-    <button class="nav-tab" onclick="goPage('plano')">Plano Semanal</button>
-    <button class="nav-tab" onclick="goPage('logistica')">Logística</button>
-    <button class="nav-tab" onclick="goPage('lean')">Lean Score</button>
-    <button class="nav-tab" onclick="goPage('etiqueta')">Etiquetas</button>
-  </div>
-  <div class="topbar-right">
-    <span class="today-chip" id="today-chip"></span>
-    <div class="upload-area">
-      <label class="upload-btn accent">
-        ↑ Cronograma
-        <input type="file" id="uploadCrono" accept=".xlsx,.xls,.csv">
-      </label>
-      <label class="upload-btn">
-        ↑ Kits
-        <input type="file" id="uploadKits" accept=".xlsx,.xls,.csv">
-      </label>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ PAGES ══════════════════════════════════════════════ -->
-
-<!-- ── PAGE: VISÃO GERAL ─────────────────────────────────── -->
-<div class="page active" id="page-overview">
-  <div class="kpi-row" id="kpi-overview"></div>
-
-  <!-- Flow Lean -->
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hdr">
-      <span class="card-title">Fluxo Lean · Workflow de Kits</span>
-      <span class="card-sub">Status operacional</span>
-    </div>
-    <div class="flow-steps" id="flow-steps"></div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Progresso por Bloco</span>
-        <span class="card-sub" id="active-blocos-lbl"></span>
-      </div>
-      <div id="bloco-progress"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Status das Atividades</span>
-        <span class="card-sub">Distribuição geral</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
-        <canvas id="statusDoughnut" width="130" height="130"></canvas>
-        <div id="status-legend" style="flex:1;display:flex;flex-direction:column;gap:10px"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Atividades por Mês</span>
-        <span class="card-sub">Volume de início</span>
-      </div>
-      <div class="chart-box" style="height:220px">
-        <canvas id="monthBar"></canvas>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Disciplinas</span>
-        <span class="card-sub">Tarefas por categoria</span>
-      </div>
-      <div class="chart-box" id="disc-chart-wrap" style="height:220px">
-        <canvas id="discBar"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Alertas -->
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">🚨 Central de Alertas</span>
-      <span class="card-sub" id="alerts-count"></span>
-    </div>
-    <div id="alerts-container"></div>
-  </div>
-</div>
-
-<!-- ── PAGE: KITS & FLUXO ─────────────────────────────────── -->
-<div class="page" id="page-kits">
-  <div class="kpi-row" id="kpi-kits"></div>
-
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-hdr">
-      <span class="card-title">Kanban · Fluxo de Separação</span>
-      <span class="card-sub">Arraste para atualizar status</span>
-    </div>
-    <div class="filter-bar" id="kanban-filters"></div>
-    <div class="kanban" id="kanban-board"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">Conferência de Kit</span>
-      <span class="card-sub">Selecione uma atividade</span>
-    </div>
-    <div class="filter-bar" id="checklist-filters"></div>
-    <div id="checklist-container"></div>
-  </div>
-</div>
-
-<!-- ── PAGE: PLANO SEMANAL ────────────────────────────────── -->
-<div class="page" id="page-plano">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-    <div>
-      <h2 style="font-size:18px;font-weight:800;color:var(--text1)">Plano Semanal Lean</h2>
-      <p style="font-size:12px;color:var(--text3);font-family:var(--font-mono);margin-top:2px" id="semana-label"></p>
-    </div>
-    <button onclick="gerarPlanoSemanal()" style="padding:9px 20px;background:var(--blue3);border:1px solid var(--blue2);border-radius:8px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px">⚡ Gerar Plano Semanal</button>
-  </div>
-
-  <div class="semana-row" id="semana-row"></div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">📦 Kits para Separar esta Semana</span>
-        <span class="card-sub" id="sep-count"></span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="data-table" id="sep-table">
-          <thead><tr>
-            <th>Atividade</th><th>Bloco</th><th>Pavimento</th><th>Disciplina</th><th>Início</th><th>Entrega Ideal</th><th>Prioridade</th>
-          </tr></thead>
-          <tbody id="sep-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">🚚 Entregas Programadas</span>
-        <span class="card-sub" id="del-count"></span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="data-table" id="del-table">
-          <thead><tr>
-            <th>Atividade</th><th>Bloco</th><th>Data Entrega</th><th>Status</th>
-          </tr></thead>
-          <tbody id="del-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">📋 PPC · Percent Plan Complete</span>
-      <span class="card-sub">Confiabilidade do planejamento</span>
-    </div>
-    <div class="grid-3">
-      <div style="text-align:center;padding:20px">
-        <div style="font-size:48px;font-weight:800;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-2px" id="ppc-value">—</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">PPC GERAL</div>
-      </div>
-      <div style="text-align:center;padding:20px">
-        <div style="font-size:48px;font-weight:800;color:var(--amber);letter-spacing:-2px" id="ppc-bloco20">—</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">BLOCO 20</div>
-      </div>
-      <div style="text-align:center;padding:20px">
-        <div style="font-size:48px;font-weight:800;color:var(--blue);letter-spacing:-2px" id="ppc-bloco19">—</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono);margin-top:4px">BLOCO 19</div>
-      </div>
-    </div>
-    <div class="chart-box" style="height:200px;margin-top:10px">
-      <canvas id="ppcChart"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- ── PAGE: LOGÍSTICA ────────────────────────────────────── -->
-<div class="page" id="page-logistica">
-  <div class="kpi-row" id="kpi-logistica"></div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Içamento por Bloco</span>
-        <span class="card-sub">Volume total de içamentos</span>
-      </div>
-      <div class="chart-box" style="height:240px">
-        <canvas id="icaBlockChart"></canvas>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Picos Logísticos por Mês</span>
-        <span class="card-sub">Volume de içamento programado</span>
-      </div>
-      <div class="chart-box" style="height:240px">
-        <canvas id="icaMonthChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">Linha de Balanço · Lean Construction</span>
-      <span class="card-sub">X = Tempo · Y = Pavimentos · Fluxo contínuo por bloco</span>
-    </div>
-    <div class="filter-bar" id="balance-filters"></div>
-    <div class="chart-box" style="height:320px">
-      <canvas id="balanceChart"></canvas>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">🚚 Tabela de Logística Lean</span>
-      <span class="card-sub">Entrega 1–3 dias antes da atividade</span>
-    </div>
-    <div style="overflow-x:auto">
-      <table class="data-table">
-        <thead><tr>
-          <th>Kit / Atividade</th><th>Bloco</th><th>Pavimento</th><th>Disciplina</th><th>Início Atividade</th><th>Entrega Ideal</th><th>Içamento</th><th>Status</th>
-        </tr></thead>
-        <tbody id="logistica-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ── PAGE: LEAN SCORE ───────────────────────────────────── -->
-<div class="page" id="page-lean">
-  <div class="grid-13">
-    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px">
-      <div class="lean-score-ring">
-        <div class="lean-score-value" id="lean-score-val">—</div>
-        <div class="lean-score-label">LEAN SCORE</div>
-      </div>
-      <canvas id="leanGauge" width="200" height="110"></canvas>
-      <div style="font-size:12px;color:var(--text3);text-align:center;max-width:180px;line-height:1.5">Pontuação composta baseada em PPC, fluxo, atrasos e produtividade</div>
-    </div>
-    <div>
-      <div class="kpi-row" id="kpi-lean"></div>
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Componentes do Lean Score</span>
-        </div>
-        <div id="lean-components"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Heatmap da Obra</span>
-        <span class="card-sub">Bloco × Pavimento · Concentração de atividades</span>
-      </div>
-      <div id="heatmap-container"></div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Curva S · Planejado vs Executado</span>
-      </div>
-      <div class="chart-box" style="height:260px">
-        <canvas id="curvaSChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">🚧 Controle de Restrições (Last Planner)</span>
-      <span class="card-sub" id="restricoes-count"></span>
-    </div>
-    <div id="restricoes-container"></div>
-  </div>
-</div>
-
-<!-- ── PAGE: ETIQUETAS ───────────────────────────────────── -->
-<div class="page" id="page-etiqueta">
-  <div style="margin-bottom:14px">
-    <h2 style="font-size:18px;font-weight:800;color:var(--text1)">Gerador de Etiquetas</h2>
-    <p style="font-size:12px;color:var(--text3);font-family:var(--font-mono);margin-top:2px">Selecione a atividade para gerar a etiqueta do kit</p>
-  </div>
-  <div class="grid-31">
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Selecionar Atividade</span>
-      </div>
-      <div class="filter-bar" id="etiqueta-bloco-filters"></div>
-      <div style="overflow-x:auto">
-        <table class="data-table" id="etiqueta-table">
-          <thead><tr>
-            <th>Tarefa</th><th>Bloco</th><th>Pav.</th><th>Pacote</th><th>Disciplina</th><th>Início</th><th>Ação</th>
-          </tr></thead>
-          <tbody id="etiqueta-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:12px">
-        <div class="card-hdr">
-          <span class="card-title">Preview da Etiqueta</span>
-        </div>
-        <div id="etiqueta-preview" style="display:flex;justify-content:center;padding:10px">
-          <div style="color:var(--text3);font-size:12px;text-align:center;padding:30px">Selecione uma atividade à esquerda</div>
-        </div>
-      </div>
-      <button onclick="printEtiqueta()" style="width:100%;padding:10px;background:var(--blue3);border:1px solid var(--blue2);border-radius:8px;color:var(--cyan);font-size:13px;font-weight:700;cursor:pointer">🖨️ Imprimir Etiqueta</button>
-    </div>
-  </div>
-</div>
-
-</div><!-- /app -->
-
-<script>
-// ═══════════════════════════════════════════════════════════
-// CONFIGURAÇÃO DE COLUNAS
-// ═══════════════════════════════════════════════════════════
-const COL = {
-  BLOCO:'Bloco', PAVIMENTO:'Pavimento', PACOTE:'Pacote', TAREFA:'Tarefa',
-  DISCIPLINA:'Disciplina', INICIO:'Início', FIM:'Fim',
-  DURACAO:'Duração_dias_úteis', ICAMENTO:'Içamento_total'
-};
-
-// ═══════════════════════════════════════════════════════════
-// ESTADO GLOBAL
-// ═══════════════════════════════════════════════════════════
-const TODAY = new Date('2026-05-22');
-let CRONO = [], KITS = [];
-let filterBloco = 'Todos', filterEtiquetaBloco = 'Todos', filterKanbanBloco = 'Todos';
-let kitStatus = {}; // key=tarefa id, val=status string
-
-const BLOCOS_PAL = {
-  'Bloco 17':'#3d8ef8','Bloco 18':'#00e5a0','Bloco 19':'#ffb320',
-  'Bloco 20':'#a855f7','Bloco 21':'#ff3d6b','Bloco 22':'#00d4ff',
-  'Bloco 23':'#fb923c','Bloco 24':'#e879f9'
-};
-const DISC_PAL = ['#3d8ef8','#00e5a0','#ffb320','#a855f7','#ff3d6b','#00d4ff','#fb923c','#e879f9','#a3e635','#f472b6'];
-const PAV_ORDER = {'3º':3,'2º':2,'1º':1,'Térreo':0};
-const FLOW_STATES = ['Planejado','Separando','Conferido','Embalado','Entregue','Em Uso'];
-
-// ═══════════════════════════════════════════════════════════
-// UTILITÁRIOS
-// ═══════════════════════════════════════════════════════════
-document.getElementById('today-chip').textContent = TODAY.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
-
-function excelDate(v){
-  if(!v) return null;
-  if(v instanceof Date) return isNaN(v)?null:v;
-  if(typeof v==='number') return new Date(Math.round((v-25569)*86400000));
-  const d=new Date(v); return isNaN(d)?null:d;
-}
-function getStatus(row){
-  const ini=excelDate(row[COL.INICIO]), fim=excelDate(row[COL.FIM]);
-  if(!ini||!fim) return 'Indefinido';
-  if(fim<TODAY) return 'Concluído';
-  if(ini<=TODAY) return 'Em Andamento';
-  return 'Futuro';
-}
-function discBase(d){
-  if(!d||d==='nan'||d==='null') return null;
-  return String(d).replace(/\s*\(.*?\)/g,'').replace(/\s+/g,' ').trim()||null;
-}
-function fmtDate(d){
-  if(!d) return '—';
-  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-}
-function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
-function weekStart(d){const r=new Date(d);r.setDate(r.getDate()-r.getDay());return r;}
-function weekEnd(d){const r=new Date(d);r.setDate(r.getDate()+(6-r.getDay()));return r;}
-function rowKey(r){return `${r[COL.BLOCO]}|${r[COL.PAVIMENTO]}|${r[COL.PACOTE]}|${r[COL.TAREFA]}`;}
-function getPriority(ini){
-  const diff=(excelDate(ini)-TODAY)/(86400000);
-  if(diff<=1) return {label:'🔴 Alta',cls:'pill-alert'};
-  if(diff<=5) return {label:'🟡 Média',cls:'pill-warn'};
-  return {label:'🟢 Normal',cls:'pill-done'};
-}
-
-// ═══════════════════════════════════════════════════════════
-// NAVEGAÇÃO
-// ═══════════════════════════════════════════════════════════
-function goPage(id){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.querySelectorAll('.nav-tab').forEach(t=>{
-    if(t.textContent.toLowerCase().includes(id.slice(0,4))||
-       (id==='overview'&&t.textContent.includes('Geral'))||
-       (id==='kits'&&t.textContent.includes('Kit'))||
-       (id==='plano'&&t.textContent.includes('Plano'))||
-       (id==='logistica'&&t.textContent.includes('Log'))||
-       (id==='lean'&&t.textContent.includes('Lean'))||
-       (id==='etiqueta'&&t.textContent.includes('Etiquet'))) t.classList.add('active');
-  });
-}
-window.goPage=goPage;
-
-// ═══════════════════════════════════════════════════════════
-// CHARTS (globals)
-// ═══════════════════════════════════════════════════════════
-let charts={};
-function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
-
-// ═══════════════════════════════════════════════════════════
-// RENDER PRINCIPAL
-// ═══════════════════════════════════════════════════════════
-function renderAll(data){
-  CRONO=data;
-  // init kit status
-  CRONO.forEach(r=>{ const k=rowKey(r); if(!kitStatus[k]) kitStatus[k]='Planejado'; });
-
-  renderOverview();
-  renderKits();
-  renderPlano();
-  renderLogistica();
-  renderLean();
-  renderEtiqueta();
-}
-
-// ═══════════════════════════════════════════════════════════
-// PAGE: VISÃO GERAL
-// ═══════════════════════════════════════════════════════════
-function renderOverview(){
-  const data=CRONO;
-  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  const sc={Concluído:0,'Em Andamento':0,Futuro:0};
-  data.forEach(r=>{const s=getStatus(r);if(sc[s]!==undefined)sc[s]++;});
-  const totalIca=data.reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0);
-  const activeBlocos=blocos.filter(b=>data.filter(r=>r[COL.BLOCO]===b&&getStatus(r)==='Em Andamento').length>0);
-
-  document.getElementById('kpi-overview').innerHTML=`
-    <div class="kpi k-blue"><div class="kpi-label">Total Atividades</div><div class="kpi-value">${data.length.toLocaleString('pt-BR')}</div><div class="kpi-sub">${blocos.length} blocos</div></div>
-    <div class="kpi k-green"><div class="kpi-label">Concluídas</div><div class="kpi-value">${sc['Concluído']}</div><div class="kpi-sub">${(sc['Concluído']/data.length*100).toFixed(1)}% do total</div></div>
-    <div class="kpi k-amber"><div class="kpi-label">Em Andamento</div><div class="kpi-value">${sc['Em Andamento']}</div><div class="kpi-sub">Hoje · ${activeBlocos.length} blocos</div></div>
-    <div class="kpi k-violet"><div class="kpi-label">Futuras</div><div class="kpi-value">${sc['Futuro'].toLocaleString('pt-BR')}</div><div class="kpi-sub">Agendadas</div></div>
-    <div class="kpi k-rose"><div class="kpi-label">Içamento Total</div><div class="kpi-value">${Math.round(totalIca)}</div><div class="kpi-sub">Unidades acumuladas</div></div>
-    <div class="kpi k-cyan"><div class="kpi-label">Blocos Ativos</div><div class="kpi-value">${activeBlocos.length}</div><div class="kpi-sub">${blocos.length} no total</div></div>
-  `;
-
-  // Flow Lean
-  const flowCounts = FLOW_STATES.map(s=>Object.values(kitStatus).filter(v=>v===s).length);
-  const flowTotal = Object.keys(kitStatus).length||1;
-  const flowIcons = ['📋','📦','✅','📫','🚚','⚙️'];
-  document.getElementById('flow-steps').innerHTML = FLOW_STATES.map((s,i)=>`
-    <div class="flow-step ${flowCounts[i]>0?(i<=1?'flow-active':'flow-done'):'flow-future'}">
-      <div class="flow-step-icon">${flowIcons[i]}</div>
-      <div class="flow-step-count">${flowCounts[i]}</div>
-      <div class="flow-step-name">${s}</div>
-    </div>`).join('');
-
-  // Progresso por bloco
-  document.getElementById('active-blocos-lbl').textContent=`${activeBlocos.length} bloco(s) ativos`;
-  document.getElementById('bloco-progress').innerHTML=blocos.map(b=>{
-    const rows=data.filter(r=>r[COL.BLOCO]===b);
-    const done=rows.filter(r=>getStatus(r)==='Concluído').length;
-    const active=rows.filter(r=>getStatus(r)==='Em Andamento').length;
-    const pct=rows.length>0?Math.round(done/rows.length*100):0;
-    const col=BLOCOS_PAL[b]||'#3d8ef8';
-    const ini=rows.map(r=>excelDate(r[COL.INICIO])).filter(Boolean).sort((a,b)=>a-b)[0];
-    const fim=rows.map(r=>excelDate(r[COL.FIM])).filter(Boolean).sort((a,b)=>b-a)[0];
-    const span=ini&&fim?fim-ini:1;
-    const gone=ini?Math.min(TODAY,fim||TODAY)-ini:0;
-    const w=span>0?Math.max(2,Math.min(100,Math.round(gone/span*100))):0;
-    return `<div class="progress-row">
-      <span class="p-label">${b.replace('Bloco ','B')}</span>
-      <div class="p-track">
-        <div class="p-fill" style="width:${w}%;background:${col}">
-          ${w>14?`<span class="p-fill-text">${pct}%</span>`:''}
-        </div>
-        ${active>0?`<div style="position:absolute;right:0;top:0;height:100%;width:3px;background:var(--amber)"></div>`:''}
-      </div>
-      <span class="p-pct">${pct}%</span>
-    </div>`;
-  }).join('');
-
-  // Status doughnut
-  destroyChart('status');
-  const sctx=document.getElementById('statusDoughnut').getContext('2d');
-  charts.status=new Chart(sctx,{
-    type:'doughnut',
-    data:{labels:['Concluído','Em Andamento','Futuro'],datasets:[{data:[sc['Concluído'],sc['Em Andamento'],sc['Futuro']],backgroundColor:['#00e5a0','#3d8ef8','#243348'],borderWidth:2,borderColor:'#0c1018'}]},
-    options:{responsive:false,cutout:'72%',plugins:{legend:{display:false}}}
-  });
-  document.getElementById('status-legend').innerHTML=[
-    ['Concluído','#00e5a0',sc['Concluído']],
-    ['Em Andamento','#3d8ef8',sc['Em Andamento']],
-    ['Futuro','#243348',sc['Futuro']]
-  ].map(([l,c,v])=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-      <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:2px;background:${c};flex-shrink:0"></span><span style="font-size:12px;color:var(--text2)">${l}</span></div>
-      <span style="font-size:14px;font-weight:700;color:var(--text1)">${v}</span>
-    </div>`).join('');
-*/
-  // Month chart
-  const mMap={};
-  data.forEach(r=>{const d=excelDate(r[COL.INICIO]);if(!d)return;const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;mMap[k]=(mMap[k]||0)+1;});
-  const mKeys=Object.keys(mMap).sort().slice(0,18);
-  const curM=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}`;
-  destroyChart('month');
-  charts.month=new Chart(document.getElementById('monthBar'),{
-    type:'bar',
-    data:{labels:mKeys.map(k=>{const[y,m]=k.split('-');return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2)}),
-      datasets:[{data:mKeys.map(k=>mMap[k]),backgroundColor:mKeys.map(k=>k<curM?'rgba(0,229,160,.65)':k===curM?'rgba(0,212,255,.9)':'rgba(61,142,248,.45)'),borderRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
-  });
-
-  // Disc chart
-  const dMap={};
-  data.forEach(r=>{const b=discBase(r[COL.DISCIPLINA]);if(!b)return;dMap[b]=(dMap[b]||0)+1;});
-  const dEntries=Object.entries(dMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  destroyChart('disc');
-  document.getElementById('disc-chart-wrap').style.height=Math.max(200,dEntries.length*36+60)+'px';
-  charts.disc=new Chart(document.getElementById('discBar'),{
-    type:'bar',
-    data:{labels:dEntries.map(e=>e[0]),datasets:[{data:dEntries.map(e=>e[1]),backgroundColor:DISC_PAL.slice(0,dEntries.length),borderRadius:4,barThickness:18}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#8ca4c8',font:{size:11}},grid:{display:false}}}}
-  });
-/*
-  // Alertas
-  const alerts=[];
-  const ativas=data.filter(r=>getStatus(r)==='Em Andamento');
-  if(ativas.length>0) alerts.push({type:'info',icon:'⚡',text:`<strong>${ativas.length} atividades em execução hoje</strong> em ${[...new Set(ativas.map(r=>r[COL.BLOCO]))].join(', ')}`});
-  const semanaFim=addDays(TODAY,7);
-  const iniciandoSemana=data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&ini>TODAY&&ini<=semanaFim;});
-  if(iniciandoSemana.length>0) alerts.push({type:'warn',icon:'📅',text:`<strong>${iniciandoSemana.length} atividades iniciam nesta semana</strong> — verifique se os kits estão separados`});
-  const atrasadas=data.filter(r=>{const fim=excelDate(r[COL.FIM]);const ini=excelDate(r[COL.INICIO]);return fim&&ini&&fim<TODAY&&ini<=TODAY&&getStatus(r)!=='Concluído';});
-  if(atrasadas.length>0) alerts.push({type:'critical',icon:'🚨',text:`<strong>${atrasadas.length} atividades com potencial atraso</strong> — data fim ultrapassada sem conclusão`});
-  const semProximas=data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&ini>TODAY&&ini<=addDays(TODAY,3);});
-  if(semProximas.length>0) alerts.push({type:'critical',icon:'🔴',text:`<strong>${semProximas.length} atividades iniciam em menos de 3 dias</strong> — kits devem estar prontos`});
-
-  document.getElementById('alerts-count').textContent=`${alerts.length} alertas ativos`;
-  document.getElementById('alerts-container').innerHTML=alerts.map(a=>`
-    <div class="alert-item ${a.type}">
-      <span class="alert-icon">${a.icon}</span>
-      <div class="alert-text">${a.text}</div>
-    </div>`).join('')||(` <div style="color:var(--text3);font-size:13px;padding:16px;text-align:center">✅ Nenhum alerta crítico no momento</div>`);
-}
-
-// ═══════════════════════════════════════════════════════════
-// PAGE: KITS & KANBAN
-// ═══════════════════════════════════════════════════════════
-function renderKits(){
-  const data=CRONO;
-  const ativas=data.filter(r=>getStatus(r)==='Em Andamento').length;
-  const separando=Object.values(kitStatus).filter(v=>v==='Separando').length;
-  const prontos=Object.values(kitStatus).filter(v=>v==='Entregue'||v==='Em Uso').length;
-
-  document.getElementById('kpi-kits').innerHTML=`
-    <div class="kpi k-violet"><div class="kpi-label">Total Kits</div><div class="kpi-value">${data.length}</div><div class="kpi-sub">Atividades mapeadas</div></div>
-    <div class="kpi k-amber"><div class="kpi-label">Em Separação</div><div class="kpi-value">${separando}</div><div class="kpi-sub">No almoxarifado</div></div>
-    <div class="kpi k-green"><div class="kpi-label">Entregues</div><div class="kpi-value">${prontos}</div><div class="kpi-sub">Na obra</div></div>
-    <div class="kpi k-blue"><div class="kpi-label">Ativas Hoje</div><div class="kpi-value">${ativas}</div><div class="kpi-sub">Em execução</div></div>
-  `;
-
-  // Kanban filters
-  const blocos=['Todos',...[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort()];
-  document.getElementById('kanban-filters').innerHTML=blocos.map(b=>
-    `<button class="fbtn${filterKanbanBloco===b?' active':''}" onclick="setKanbanFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
-
-  renderKanban();
-  renderChecklist();
-}
-
-function setKanbanFilter(b){filterKanbanBloco=b;renderKits();}
-window.setKanbanFilter=setKanbanFilter;
-
-function renderKanban(){
-  const data=CRONO.filter(r=>{
-    if(filterKanbanBloco!=='Todos'&&r[COL.BLOCO]!==filterKanbanBloco) return false;
-    const s=getStatus(r);
-    return s==='Em Andamento'||s==='Concluído';
-  }).slice(0,40);
-
-  const byState={};
-  FLOW_STATES.forEach(s=>byState[s]=[]);
-  data.forEach(r=>{
-    const k=rowKey(r);
-    const st=kitStatus[k]||'Planejado';
-    if(byState[st]) byState[st].push(r);
-  });
-
-  const colColors={'Planejado':'var(--text3)','Separando':'var(--amber)','Conferido':'var(--blue)','Embalado':'var(--violet)','Entregue':'var(--emerald)','Em Uso':'var(--emerald)'};
-  document.getElementById('kanban-board').innerHTML=FLOW_STATES.map(s=>`
-    <div class="kan-col" data-state="${s}" ondragover="ev.preventDefault()" ondrop="kanDrop(event,'${s}')">
-      <div class="kan-col-hdr">
-        <span class="kan-col-name" style="color:${colColors[s]}">${s}</span>
-        <span class="kan-col-count">${byState[s].length}</span>
-      </div>
-      ${byState[s].map(r=>{
-        const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
-        const disc=discBase(r[COL.DISCIPLINA])||'—';
-        return `<div class="kan-card" draggable="true" ondragstart="kanDragStart(event,'${rowKey(r).replace(/'/g,'\\'')}')" data-key="${rowKey(r)}">
-          <div class="kan-card-name">${(r[COL.TAREFA]||'').slice(0,55)}${(r[COL.TAREFA]||'').length>55?'…':''}</div>
-          <div class="kan-card-tags">
-            <span class="kan-card-tag" style="color:${col}">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span>
-            <span class="kan-card-tag">${r[COL.PAVIMENTO]||'—'}</span>
-            <span class="kan-card-tag">${disc}</span>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`).join('');
-}
-
-let dragKey=null;
-function kanDragStart(ev,key){dragKey=key;ev.target.classList.add('dragging');}
-function kanDrop(ev,state){
-  ev.preventDefault();
-  if(dragKey){kitStatus[dragKey]=state;document.querySelectorAll('.kan-card').forEach(c=>c.classList.remove('dragging'));renderKanban();renderOverview();}
-}
-window.kanDragStart=kanDragStart; window.kanDrop=kanDrop;
-
-function renderChecklist(){
-  const ativas=CRONO.filter(r=>getStatus(r)==='Em Andamento').slice(0,8);
-  document.getElementById('checklist-filters').innerHTML=ativas.map((r,i)=>`
-    <button class="fbtn" onclick="showChecklist(${i})">${(r[COL.TAREFA]||'').slice(0,30)}…</button>`).join('');
-
-  if(ativas.length>0) showChecklistData(ativas[0]);
-  else document.getElementById('checklist-container').innerHTML=`<div style="color:var(--text3);padding:20px;text-align:center">Nenhuma atividade ativa hoje</div>`;
-}
-
-function showChecklist(idx){
-  const ativas=CRONO.filter(r=>getStatus(r)==='Em Andamento').slice(0,8);
-  if(ativas[idx]) showChecklistData(ativas[idx]);
-}
-window.showChecklist=showChecklist;
-
-function showChecklistData(row){
-  const k=rowKey(row);
-  const checks=[
-    {id:'sep',label:'Separado',sub:'Material separado no almoxarifado'},
-    {id:'conf',label:'Conferido',sub:'Quantidade e itens verificados'},
-    {id:'comp',label:'Completo',sub:'Todos os itens presentes'},
-    {id:'emb',label:'Embalado',sub:'Kit embalado e protegido'},
-    {id:'etiq',label:'Etiquetado',sub:'Etiqueta colada e legível'},
-    {id:'exp',label:'Expedido',sub:'Saiu do almoxarifado'},
-    {id:'ent',label:'Entregue',sub:'Recebido na frente de trabalho'},
-  ];
-  const stored=JSON.parse(localStorage.getItem('checks_'+k)||'{}');
-  document.getElementById('checklist-container').innerHTML=`
-    <div style="margin-bottom:10px;padding:10px;background:var(--bg3);border-radius:8px">
-      <div style="font-size:13px;font-weight:700;color:var(--text1)">${row[COL.TAREFA]}</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)">${row[COL.BLOCO]} · ${row[COL.PAVIMENTO]} · ${discBase(row[COL.DISCIPLINA])||'—'}</div>
-    </div>
-    ${checks.map(c=>`
-    <div class="check-item${stored[c.id]?' checked':''}" onclick="toggleCheck('${k}','${c.id}',this)">
-      <div class="check-box">${stored[c.id]?'✓':''}</div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">LF</div>
       <div>
-        <div class="check-label">${c.label}</div>
-        <div class="check-sub">${c.sub}</div>
+        <div class="brand-title">LeanFlow</div>
+        <div class="brand-sub">Torre de Controle Lean Construction</div>
       </div>
-    </div>`).join('')}`;
+    </div>
+    <nav class="tabs" aria-label="NavegaÃ§Ã£o principal">
+      <button class="tab active" data-page="executivo">Executivo</button>
+      <button class="tab" data-page="prioridade">Prioridades</button>
+      <button class="tab" data-page="workflow">Workflow</button>
+      <button class="tab" data-page="logistica">logistica</button>
+      <button class="tab" data-page="dados">Dados</button>
+      <!--<button class="tab" data-page="docs">PDFs</button>-->
+    </nav>
+    <div class="uploads">
+      <button class="upload primary" id="loadDocBase" type="button">Atualização</button>
+      <!--
+      <label class="upload primary">Cronograma
+        <input id="cronogramaInput" type="file" accept=".xlsx,.xls,.csv,.pdf" multiple>
+      </label>
+      <label class="upload">Kits
+        <input id="kitsInput" type="file" accept=".xlsx,.xls,.csv" multiple>
+      </label>
+      <label class="upload">PDFs
+        <input id="pdfInput" type="file" accept=".pdf" multiple>
+      </label>-->
+    </div>
+  </header>
+
+  <main>
+    <section class="page active" id="page-executivo">
+      <div class="hero">
+        <div class="panel pad">
+          <h1>Controle integrado de planejamento, kits, logÃ­stica e produÃ§Ã£o.</h1>
+          <p class="hint" style="margin-top:12px;max-width:850px">Importe o cronograma, todas as planilhas de kits e os PDFs de atualizaÃ§Ã£o/nomenclatura. O painel cruza inÃ­cio de atividade, material, workflow e restriÃ§Ãµes para indicar o que precisa ser separado primeiro.</p>
+          <div class="statusline" id="loadStatus"></div>
+        </div>
+      </div>
+      <div class="kpis" id="kpiExecutive"></div>
+      <div class="grid-2">
+        <div class="panel pad">
+          <div class="section-head"><div><h2>Status dos kits</h2><p class="hint">DistribuiÃ§Ã£o do workflow</p></div></div>
+          <div class="chartbox"><canvas id="statusChart"></canvas></div>
+        </div>
+        <div class="panel pad">
+          <div class="section-head"><div><h2>Atividades por disciplina</h2><p class="hint">Carga planejada do cronograma</p></div></div>
+          <div class="chartbox"><canvas id="discChart"></canvas></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel pad">
+          <div class="section-head"><div><h2>Curva S</h2><p class="hint">Planejado x executado pelo workflow</p></div></div>
+          <div class="chartbox"><canvas id="curveChart"></canvas></div>
+        </div>
+        <div class="panel pad">
+          <div class="section-head"><div><h2>Atrasos por bloco</h2><p class="hint">Atividades vencidas sem finalizaÃ§Ã£o</p></div></div>
+          <div class="chartbox"><canvas id="delayChart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-prioridade">
+      <div class="panel pad">
+        <div class="section-head">
+          <div><h2>Painel de Prioridade de SeparaÃ§Ã£o</h2><p class="hint">Ranking automÃ¡tico por data, status, falta de material, gargalo, emergÃªncia e kit incompleto.</p></div>
+          <span class="chip yellow" id="priorityCount">0 kits</span>
+        </div>
+        <div class="toolbar">
+          <input class="field search" id="prioritySearch" placeholder="Pesquisar por bloco, pavimento, disciplina ou tarefa">
+          <select class="field" id="priorityDiscipline"><option value="">Todas disciplinas</option></select>
+          <select class="field" id="priorityRisk">
+            <option value="">Todos riscos</option>
+            <option value="red">Vermelho</option>
+            <option value="yellow">Amarelo</option>
+            <option value="blue">Azul</option>
+            <option value="green">Verde</option>
+          </select>
+        </div>
+        <div class="tablewrap"><table><thead><tr><th>#</th><th>Kit / Atividade</th><th>Prioridade</th><th>Prazo</th><th>Material</th><th>Workflow</th><th>AÃ§Ãµes manuais</th></tr></thead><tbody id="priorityTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-workflow">
+      <div class="panel pad">
+        <div class="section-head">
+          <div><h2>Workflow Automatizado dos Kits</h2><p class="hint">Arraste cartÃµes entre as etapas. Os controles ficam salvos no navegador.</p></div>
+          <button class="btn" id="resetControls">Limpar status locais</button>
+        </div>
+        <div class="workflow" id="workflowBoard"></div>
+      </div>
+      <div class="panel pad" style="margin-top:16px">
+        <div class="section-head"><div><h2>Controles manuais</h2><p class="hint">Use para emergÃªncia, gargalo e observaÃ§Ãµes de almoxarifado.</p></div></div>
+        <div id="manualControls"></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-logistica">
+      <div class="grid-3">
+        <div class="panel pad"><h2>EficiÃªncia logÃ­stica</h2><div class="kpi-value green" id="logEfficiency">0%</div><p class="hint">Kits sem atraso de entrega ideal.</p></div>
+        <div class="panel pad"><h2>DesperdÃ­cio estimado</h2><div class="kpi-value yellow" id="wasteValue">0%</div><p class="hint">Itens a encomendar, sem estoque ou duplicados.</p></div>
+        <div class="panel pad"><h2>Produtividade</h2><div class="kpi-value blue" id="prodValue">0</div><p class="hint">Atividades finalizadas ou em uso.</p></div>
+      </div>
+      <div class="panel pad">
+        <div class="section-head"><div><h2>Tabela de LogÃ­stica Lean</h2><p class="hint">Entrega ideal calculada dois dias antes do inÃ­cio da atividade.</p></div></div>
+        <div class="tablewrap"><table><thead><tr><th>Kit / Atividade</th><th>Bloco</th><th>Pavimento</th><th>Disciplina</th><th>InÃ­cio</th><th>Entrega ideal</th><th>IÃ§amento</th><th>Status</th><th>Riscos</th></tr></thead><tbody id="logisticsTable"></tbody></table></div>
+      </div>
+    </section>
+
+    <section class="page" id="page-dados">
+      <div class="grid-2">
+        <div class="panel pad">
+          <div class="section-head"><div><h2>InconsistÃªncias</h2><p class="hint">ComparaÃ§Ã£o minuciosa entre cronograma e kits.</p></div><span class="chip red" id="issueCount">0 problemas</span></div>
+          <div class="tablewrap"><table><thead><tr><th>Tipo</th><th>ReferÃªncia</th><th>Detalhe</th><th>Impacto</th></tr></thead><tbody id="issuesTable"></tbody></table></div>
+        </div>
+        <div class="panel pad">
+          <div class="section-head"><div><h2>Itens de kit</h2><p class="hint">Itens normalizados de todas as abas.</p></div><span class="chip blue" id="itemCount">0 itens</span></div>
+          <div class="toolbar"><input class="field search" id="itemSearch" placeholder="Pesquisar item, cÃ³digo, kit ou arquivo"></div>
+          <div class="tablewrap"><table><thead><tr><th>Arquivo / Aba</th><th>Kit</th><th>CÃ³digo</th><th>DescriÃ§Ã£o</th><th>Quantidade</th><th>Estoque</th></tr></thead><tbody id="itemsTable"></tbody></table></div>
+        </div>
+      </div>
+      <div class="panel pad">
+        <div class="section-head"><div><h2>Atividades do cronograma</h2><p class="hint">Base normalizada de execuÃ§Ã£o.</p></div><span class="chip green" id="activityCount">0 atividades</span></div>
+        <div class="toolbar"><input class="field search" id="activitySearch" placeholder="Pesquisar atividade, bloco ou disciplina"></div>
+        <div class="tablewrap"><table><thead><tr><th>Bloco</th><th>Pavimento</th><th>Pacote</th><th>Tarefa</th><th>Disciplina</th><th>InÃ­cio</th><th>Fim</th><th>IÃ§amento</th></tr></thead><tbody id="activitiesTable"></tbody></table></div>
+      </div>
+    </section>
+<!--
+    <section class="page" id="page-docs">
+      <div class="panel pad">
+        <div class="section-head"><div><h2>AnÃ¡lise de PDFs</h2><p class="hint">ExtraÃ§Ã£o de texto pesquisÃ¡vel via PDF.js. PDFs escaneados serÃ£o marcados como texto nÃ£o extraÃ­vel sem OCR.</p></div><span class="chip blue" id="docCount">0 documentos</span></div>
+        <div class="doc-grid" id="documentsGrid"></div>
+      </div>
+    </section>-->
+  </main>
+
+  <div class="health-rail">
+    <button class="health-toggle warn" id="healthToggle" type="button" title="Saúde do sistema">i</button>
+  </div>
+  <aside class="health-drawer panel pad" id="healthDrawer" aria-label="Saúde do sistema">
+    <div class="section-head">
+      <div>
+        <h2>Saúde do sistema</h2>
+        <p class="hint">Base, carregamento e qualidade dos dados</p>
+      </div>
+      <button class="btn" id="closeHealth" type="button">Fechar</button>
+    </div>
+    <div id="healthBox" class="empty">Aguardando arquivos.</div>
+    <div id="databaseStatus" class="statusline" style="margin-top:12px"></div>
+  </aside>
+
+  <div class="load-overlay" id="loadOverlay" role="status" aria-live="polite">
+    <div class="load-card">
+      <div class="load-top">
+        <div>
+          <h2>Carregando base de dados</h2>
+          <p class="hint" id="loadOverlayMessage">Preparando leitura da API JSON.</p>
+        </div>
+        <div class="load-percent" id="loadPercent">0%</div>
+      </div>
+      <div class="load-bar"><div class="load-fill" id="loadFill"></div></div>
+      <div class="load-steps" id="loadSteps"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+const pdfjs = globalThis.pdfjsLib;
+if (pdfjs) {
+  pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 }
 
-function toggleCheck(key,cid,el){
-  const stored=JSON.parse(localStorage.getItem('checks_'+key)||'{}');
-  stored[cid]=!stored[cid];
-  localStorage.setItem('checks_'+key,JSON.stringify(stored));
-  el.classList.toggle('checked');
-  const box=el.querySelector('.check-box');
-  box.textContent=stored[cid]?'✓':'';
+const FLOW_STATES = ["Planejado", "Separando", "Conferindo", "Carregado", "Entregue", "Em Uso", "Finalizado"];
+const STORAGE_KEY = "leanflow-kit-controls-v2";
+const DOC_BASE_PATH = "doc/";
+const DOC_API_PATH = "doc/api/";
+const DOC_DEFAULT_DATABASE = {
+  cronograma: ["Cronograma Residenciais.xlsx"],
+  kits: [
+    "Kit - Acabamentos Lean Construction.xlsx",
+    "Kit - ElÃ©trica Lean Construction (rev. 07.05.26).xlsx",
+    "Kit - Estruturas Lean Construction.xlsx",
+    "Kit - HidrÃ¡ulica Lean Construction 07.05.xlsx",
+    "Kit - HidrÃ¡ulica Lean Construction.xlsx",
+    "Kit - Revestimento Lean Construction.xlsx"
+  ],
+  pdfs: [
+    "atualizaÃ§Ã£o de cronograma.pdf",
+    "Nomenclatura dos Kits - Lean Construction.pdf"
+  ]
+};
+const TODAY = new Date();
+TODAY.setHours(0, 0, 0, 0);
+
+const state = {
+  activities: [],
+  kitItems: [],
+  kitControls: loadControls(),
+  documents: [],
+  kits: [],
+  issues: [],
+  metrics: {},
+  lastDocLoad: "",
+  currentLoadMessage: "",
+  loadSteps: [],
+  loadProgress: 0,
+  isLoadingBase: false,
+  charts: {}
+};
+
+const $ = (id) => document.getElementById(id);
+const norm = (value) => String(value ?? "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .replace(/\s+/g, " ")
+  .trim();
+const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const pct = (value) => `${Math.round(value)}%`;
+const asNumber = (value) => {
+  if (typeof value === "number") return value;
+  const n = Number(String(value ?? "").replace(",", ".").replace(/[^\d.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+
+function loadControls() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
 }
-window.toggleCheck=toggleCheck;
-
-// ═══════════════════════════════════════════════════════════
-// PAGE: PLANO SEMANAL
-// ═══════════════════════════════════════════════════════════
-function renderPlano(){
-  const wStart=weekStart(TODAY), wEnd=weekEnd(TODAY);
-  document.getElementById('semana-label').textContent=
-    `Semana de ${wStart.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} a ${wEnd.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'})}`;
-
-  gerarPlanoSemanal();
-  renderPPC();
+function saveControls() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.kitControls));
 }
-
-function gerarPlanoSemanal(){
-  const wStart=weekStart(TODAY), wEnd=addDays(weekStart(TODAY),6);
-  const dias=['Dom','Seg','Ter','Qua','Qui','Sex','Sab'];
-
-  // Atividades que iniciam ou estão ativas nesta semana
-  const weekTasks=CRONO.filter(r=>{
-    const ini=excelDate(r[COL.INICIO]), fim=excelDate(r[COL.FIM]);
-    if(!ini||!fim) return false;
-    return (ini<=wEnd && fim>=wStart);
-  });
-
-  // Calendário semanal
-  const calDays=[];
-  for(let i=0;i<7;i++){
-    const d=addDays(wStart,i);
-    const dayTasks=weekTasks.filter(r=>{
-      const ini=excelDate(r[COL.INICIO]);
-      return ini&&ini.toDateString()===d.toDateString();
-    });
-    calDays.push({d,dayTasks});
+function excelDate(value) {
+  if (!value) return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [y, m, d] = value.split("-").map(Number);
+    return new Date(y, m - 1, d);
   }
-
-  document.getElementById('semana-row').innerHTML=calDays.map(({d,dayTasks})=>{
-    const isToday=d.toDateString()===TODAY.toDateString();
-    return `<div class="semana-day${isToday?' today-col':''}">
-      <div class="semana-day-hdr">${dias[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}</div>
-      ${dayTasks.map(r=>`<div class="semana-item ini">${(r[COL.TAREFA]||'').slice(0,22)}</div>`).join('')}
-      ${dayTasks.length===0?`<div style="font-size:10px;color:var(--text4)">—</div>`:''}
-    </div>`;
-  }).join('');
-
-  // Kits para separar (início na semana ou nos próximos 5 dias)
-  const toSep=CRONO.filter(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    if(!ini) return false;
-    const diff=(ini-TODAY)/86400000;
-    return diff>0&&diff<=7;
-  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO])).slice(0,20);
-
-  document.getElementById('sep-count').textContent=toSep.length+' kits';
-  document.getElementById('sep-tbody').innerHTML=toSep.map(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    const entrega=ini?addDays(ini,-2):null;
-    const prio=getPriority(r[COL.INICIO]);
-    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
-    return `<tr>
-      <td class="name" title="${r[COL.TAREFA]}">${(r[COL.TAREFA]||'').slice(0,44)}${(r[COL.TAREFA]||'').length>44?'…':''}</td>
-      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
-      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
-      <td class="mono">${fmtDate(ini)}</td>
-      <td class="mono" style="color:var(--amber)">${fmtDate(entrega)}</td>
-      <td><span class="pill ${prio.cls}">${prio.label}</span></td>
-    </tr>`;
-  }).join('');
-
-  // Entregas da semana
-  const toDel=CRONO.filter(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    if(!ini) return false;
-    const entrega=addDays(ini,-2);
-    const diff=(entrega-TODAY)/86400000;
-    return diff>=-1&&diff<=7;
-  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO])).slice(0,15);
-
-  document.getElementById('del-count').textContent=toDel.length+' entregas';
-  document.getElementById('del-tbody').innerHTML=toDel.map(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    const entrega=addDays(ini,-2);
-    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
-    const atrasado=entrega<TODAY;
-    return `<tr>
-      <td class="name">${(r[COL.TAREFA]||'').slice(0,44)}${(r[COL.TAREFA]||'').length>44?'…':''}</td>
-      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
-      <td class="mono" style="color:${atrasado?'var(--rose)':'var(--amber)'}">${fmtDate(entrega)}</td>
-      <td><span class="pill ${atrasado?'pill-alert':'pill-warn'}">${atrasado?'⚠ Urgente':'Programado'}</span></td>
-    </tr>`;
-  }).join('');
+  if (typeof value === "number") {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (!parsed) return null;
+    return new Date(parsed.y, parsed.m - 1, parsed.d);
+  }
+  const text = String(value).trim();
+  if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(text)) {
+    const [d, m, y] = text.split("/").map(Number);
+    return new Date(y < 100 ? 2000 + y : y, m - 1, d);
+  }
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? null : new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-window.gerarPlanoSemanal=gerarPlanoSemanal;
+function fmtDate(date) {
+  return date ? date.toLocaleDateString("pt-BR") : "-";
+}
+function addDays(date, days) {
+  if (!date) return null;
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+function daysBetween(a, b) {
+  if (!a || !b) return 9999;
+  return Math.round((a - b) / 86400000);
+}
+function disciplineBase(value) {
+  const text = clean(value).replace(/\([^)]*\)/g, "");
+  const n = norm(text);
+  if (n.includes("eletr")) return "ElÃ©trica";
+  if (n.includes("hidraul") || n.includes("ar-condicionado") || n.includes("exaust")) return "HidrÃ¡ulica";
+  if (n.includes("revest")) return "Revestimento";
+  if (n.includes("acab") || n.includes("drywall") || n.includes("pintura") || n.includes("forro")) return "Acabamentos";
+  if (n.includes("estrut") || n.includes("piso") || n.includes("laminado")) return "Estruturas";
+  return text || "NÃ£o informado";
+}
+function inferDisciplineFromName(file, sheet, kit) {
+  const text = norm(`${file} ${sheet} ${kit}`);
+  if (text.includes("eletr")) return "ElÃ©trica";
+  if (text.includes("hidraul") || text.includes("exaust") || text.includes("ar-condicionado") || text.includes("loucas")) return "HidrÃ¡ulica";
+  if (text.includes("revest") || text.includes("impermeabil")) return "Revestimento";
+  if (text.includes("acab") || text.includes("drywall") || text.includes("pintura") || text.includes("forro")) return "Acabamentos";
+  if (text.includes("estrut") || text.includes("laminado")) return "Estruturas";
+  return "NÃ£o informado";
+}
+function inferPavimento(text) {
+  const n = norm(text);
+  const found = [];
+  if (n.includes("piso 03") || n.includes("3 andar") || n.includes("3Â°") || n.includes("3Âº")) found.push("3Âº");
+  if (n.includes("piso 02") || n.includes("2 andar") || n.includes("2Â°") || n.includes("2Âº")) found.push("2Âº");
+  if (n.includes("piso 01") || n.includes("1 andar") || n.includes("1Â°") || n.includes("1Âº")) found.push("1Âº");
+  if (n.includes("terreo") || n.includes("-t") || n.includes(" t ")) found.push("TÃ©rreo");
+  return found.length ? [...new Set(found)].join(" / ") : "";
+}
+function riskColor(score) {
+  if (score >= 75) return "red";
+  if (score >= 50) return "yellow";
+  if (score >= 25) return "blue";
+  return "green";
+}
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
-function renderPPC(){
-  const blocos=[...new Set(CRONO.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  const calcPPC=(rows)=>{
-    const total=rows.length;
-    if(total===0) return 0;
-    const done=rows.filter(r=>getStatus(r)==='Concluído').length;
-    const active=rows.filter(r=>getStatus(r)==='Em Andamento').length;
-    return Math.round((done+active*0.5)/total*100);
+document.querySelectorAll(".tab").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".page").forEach((p) => p.classList.remove("active"));
+    button.classList.add("active");
+    $(`page-${button.dataset.page}`).classList.add("active");
+  });
+});
+
+$("loadDocBase").addEventListener("click", loadDocDatabase);
+$("healthToggle").addEventListener("click", () => $("healthDrawer").classList.toggle("open"));
+$("closeHealth").addEventListener("click", () => $("healthDrawer").classList.remove("open"));
+
+$("cronogramaInput").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  setLoading(true);
+  try {
+    const workbook = await readWorkbook(file);
+    state.activities = parseCronograma(workbook);
+    state.activities.forEach((a) => ensureControl(a.id));
+    recompute();
+  } catch (error) {
+    alert(`Erro ao ler cronograma: ${error.message}`);
+  } finally {
+    event.target.value = "";
+    setLoading(false);
+  }
+});
+
+$("kitsInput").addEventListener("change", async (event) => {
+  const files = [...event.target.files];
+  if (!files.length) return;
+  setLoading(true);
+  try {
+    const all = [];
+    for (const file of files) {
+      const workbook = await readWorkbook(file);
+      all.push(...parseKitWorkbook(workbook, file.name));
+    }
+    state.kitItems = mergeByKey([...state.kitItems, ...all], (item) => item.id);
+    recompute();
+  } catch (error) {
+    alert(`Erro ao ler kits: ${error.message}`);
+  } finally {
+    event.target.value = "";
+    setLoading(false);
+  }
+});
+
+$("pdfInput").addEventListener("change", async (event) => {
+  const files = [...event.target.files];
+  if (!files.length) return;
+  setLoading(true);
+  try {
+    for (const file of files) state.documents.push(await parsePdf(file));
+    state.documents = mergeByKey(state.documents, (doc) => doc.name);
+    renderDocuments();
+    renderLoadStatus();
+  } catch (error) {
+    alert(`Erro ao ler PDF: ${error.message}`);
+  } finally {
+    event.target.value = "";
+    setLoading(false);
+  }
+});
+
+["prioritySearch", "priorityDiscipline", "priorityRisk", "itemSearch", "activitySearch"].forEach((id) => {
+  $(id).addEventListener("input", renderFilteredTables);
+});
+$("resetControls").addEventListener("click", () => {
+  if (!confirm("Limpar status, emergÃªncia, gargalos e observaÃ§Ãµes salvos neste navegador?")) return;
+  state.kitControls = {};
+  localStorage.removeItem(STORAGE_KEY);
+  state.activities.forEach((a) => ensureControl(a.id));
+  recompute();
+});
+
+async function loadDocDatabase() {
+  if (state.isLoadingBase) return;
+  state.isLoadingBase = true;
+  setLoading(true);
+  const button = $("loadDocBase");
+  const originalLabel = button.textContent;
+  button.textContent = "Carregando...";
+  resetLoadSteps();
+  try {
+    if (await loadJsonDatabase()) return;
+
+    state.currentLoadMessage = "Lendo manifest da base /doc...";
+    setLoadStep("Fallback Excel/PDF", "Lendo arquivos originais", "running");
+    renderLoadStatus();
+    const database = await readDocManifest();
+    const loaded = { cronograma: 0, kits: 0, pdfs: 0, missing: [] };
+
+    state.activities = [];
+    state.kitItems = [];
+    state.documents = [];
+
+    for (const fileName of database.cronograma) {
+      state.currentLoadMessage = `Lendo cronograma: ${fileName}`;
+      renderLoadStatus();
+      const workbook = await readWorkbookFromDoc(fileName, loaded);
+      if (!workbook) continue;
+      state.activities = parseCronograma(workbook);
+      loaded.cronograma += 1;
+      break;
+    }
+
+    for (const fileName of database.kits) {
+      state.currentLoadMessage = `Lendo kit: ${fileName}`;
+      renderLoadStatus();
+      const workbook = await readWorkbookFromDoc(fileName, loaded);
+      if (!workbook) continue;
+      state.kitItems.push(...parseKitWorkbook(workbook, fileName));
+      loaded.kits += 1;
+    }
+
+    for (const fileName of database.pdfs) {
+      state.currentLoadMessage = `Lendo PDF: ${fileName}`;
+      renderLoadStatus();
+      const file = await readPdfFromDoc(fileName, loaded);
+      if (!file) continue;
+      state.documents.push(await parsePdf(file, { maxPages: 10 }));
+      loaded.pdfs += 1;
+    }
+
+    state.kitItems = mergeByKey(state.kitItems, (item) => item.id);
+    state.documents = mergeByKey(state.documents, (doc) => doc.name);
+    state.lastDocLoad = `Base /doc: ${loaded.cronograma} cronograma, ${loaded.kits} kits, ${loaded.pdfs} PDFs carregados. ${loaded.missing.length ? loaded.missing.length + " arquivo(s) nÃ£o encontrado(s)." : "Todos os arquivos encontrados."}`;
+    setLoadStep("Fallback Excel/PDF", "ConcluÃ­do", "done");
+    recompute();
+  } catch (error) {
+    state.lastDocLoad = `Erro ao carregar base /doc: ${error.message}`;
+    setLoadStep("Base /doc", error.message, "error");
+    renderLoadStatus();
+  } finally {
+    state.currentLoadMessage = "";
+    state.loadProgress = Math.max(state.loadProgress, 100);
+    renderLoadingOverlay();
+    button.textContent = originalLabel;
+    setLoading(false);
+    renderLoadStatus();
+    setTimeout(() => {
+      state.isLoadingBase = false;
+      $("loadOverlay").classList.remove("show");
+    }, 650);
+  }
+}
+async function loadJsonDatabase() {
+  try {
+    state.currentLoadMessage = "Lendo API JSON estÃ¡tica...";
+    setLoadStep("API JSON", "Procurando doc/api/manifest.json", "running");
+    renderLoadStatus();
+    const manifest = await fetchJson(`${DOC_API_PATH}manifest.json`);
+    const endpoints = manifest.endpoints || {};
+    setLoadStep("API JSON", "Manifest encontrado", "done");
+
+    setLoadStep("Atividades", "Baixando activities.json", "running");
+    const activities = await fetchJson(DOC_API_PATH + (endpoints.activities || "activities.json"));
+    setLoadStep("Atividades", `${activities.length} atividades`, "done");
+
+    setLoadStep("Kits", "Baixando kit-items.json", "running");
+    const kitItems = await fetchJson(DOC_API_PATH + (endpoints.kitItems || "kit-items.json"));
+    setLoadStep("Kits", `${kitItems.length} itens`, "done");
+
+    setLoadStep("Documentos", "Baixando documents.json", "running");
+    const documents = await fetchJson(DOC_API_PATH + (endpoints.documents || "documents.json"));
+    setLoadStep("Documentos", `${documents.length} documentos`, "done");
+
+    state.activities = activities.map(hydrateActivity);
+    state.kitItems = kitItems.map(hydrateKitItem);
+    state.documents = documents.map(hydrateDocument);
+    state.lastDocLoad = `API JSON carregada: ${state.activities.length} atividades, ${state.kitItems.length} itens e ${state.documents.length} documentos.`;
+    state.currentLoadMessage = "Normalizando e calculando indicadores...";
+    setLoadStep("Indicadores", "Calculando prioridades e KPIs", "running");
+    recompute();
+    setLoadStep("Indicadores", "Pronto", "done");
+    return true;
+  } catch (error) {
+    setLoadStep("API JSON", "NÃ£o encontrada; usando fallback Excel/PDF", "warn");
+    return false;
+  }
+}
+async function fetchJson(url) {
+  const response = await fetch(`${url}?ts=${Date.now()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`${url} retornou ${response.status}`);
+  return response.json();
+}
+function hydrateActivity(activity) {
+  return {
+    ...activity,
+    inicio: excelDate(activity.inicio),
+    fim: excelDate(activity.fim),
+    duracao: asNumber(activity.duracao),
+    icamento: asNumber(activity.icamento)
   };
-  const ppcGeral=calcPPC(CRONO);
-  document.getElementById('ppc-value').textContent=ppcGeral+'%';
-  const b20=CRONO.filter(r=>r[COL.BLOCO]==='Bloco 20');
-  const b19=CRONO.filter(r=>r[COL.BLOCO]==='Bloco 19');
-  document.getElementById('ppc-bloco20').textContent=calcPPC(b20)+'%';
-  document.getElementById('ppc-bloco19').textContent=calcPPC(b19)+'%';
-
-  // PPC por bloco chart
-  const ppcVals=blocos.map(b=>calcPPC(CRONO.filter(r=>r[COL.BLOCO]===b)));
-  destroyChart('ppc');
-  charts.ppc=new Chart(document.getElementById('ppcChart'),{
-    type:'bar',
-    data:{labels:blocos.map(b=>b.replace('Bloco ','')),datasets:[{label:'PPC %',data:ppcVals,backgroundColor:blocos.map(b=>BLOCOS_PAL[b]||'#3d8ef8'),borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{display:false}},y:{max:100,ticks:{color:'#4d6385',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(30,45,66,.4)'}}}}
+}
+function hydrateKitItem(item) {
+  return {
+    ...item,
+    entrega: excelDate(item.entrega),
+    incomplete: Boolean(item.incomplete)
+  };
+}
+function hydrateDocument(doc) {
+  return {
+    ...doc,
+    bytes: [],
+    terms: Array.isArray(doc.terms) ? doc.terms : [],
+    needsOcr: Boolean(doc.needsOcr)
+  };
+}
+function resetLoadSteps() {
+  state.loadSteps = [
+    { name: "API JSON", detail: "Aguardando", status: "idle" },
+    { name: "Atividades", detail: "Aguardando", status: "idle" },
+    { name: "Kits", detail: "Aguardando", status: "idle" },
+    { name: "Documentos", detail: "Aguardando", status: "idle" },
+    { name: "Indicadores", detail: "Aguardando", status: "idle" }
+  ];
+  state.loadProgress = 0;
+  renderLoadingOverlay();
+  renderLoadStatus();
+}
+function setLoadStep(name, detail, status) {
+  const step = state.loadSteps.find((item) => item.name === name);
+  if (step) {
+    step.detail = detail;
+    step.status = status;
+  } else {
+    state.loadSteps.push({ name, detail, status });
+  }
+  updateLoadProgress();
+  renderLoadingOverlay();
+  renderLoadStatus();
+}
+function updateLoadProgress() {
+  if (!state.loadSteps.length) {
+    state.loadProgress = 0;
+    return;
+  }
+  const weights = { idle: 0, running: .5, warn: .75, error: 1, done: 1 };
+  const sum = state.loadSteps.reduce((total, step) => total + (weights[step.status] ?? 0), 0);
+  state.loadProgress = clamp(Math.round(sum / state.loadSteps.length * 100), 0, 100);
+}
+function renderLoadingOverlay() {
+  const percent = Math.round(state.loadProgress || 0);
+  $("loadPercent").textContent = `${percent}%`;
+  $("loadFill").style.width = `${percent}%`;
+  $("loadOverlayMessage").textContent = state.currentLoadMessage || state.lastDocLoad || "Preparando leitura da API JSON.";
+  $("loadSteps").innerHTML = state.loadSteps.map((step) => {
+    const cls = step.status === "done" ? "green" : step.status === "error" ? "red" : step.status === "warn" ? "yellow" : step.status === "running" ? "blue" : "";
+    return `<div class="load-step ${cls}"><strong>${escapeHtml(step.name)}</strong><span>${escapeHtml(step.detail)}</span></div>`;
+  }).join("");
+}
+async function readDocManifest() {
+  try {
+    const response = await fetch(`${DOC_BASE_PATH}manifest.json?ts=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("manifest ausente");
+    const manifest = await response.json();
+    if (Array.isArray(manifest.files)) return normalizeManifestList(manifest.files);
+    return normalizeManifestObject(manifest);
+  } catch {
+    return DOC_DEFAULT_DATABASE;
+  }
+}
+function normalizeManifestObject(manifest) {
+  return {
+    cronograma: asList(manifest.cronograma || manifest.schedule),
+    kits: asList(manifest.kits),
+    pdfs: asList(manifest.pdfs || manifest.documents)
+  };
+}
+function normalizeManifestList(files) {
+  const database = { cronograma: [], kits: [], pdfs: [] };
+  files.forEach((entry) => {
+    const name = typeof entry === "string" ? entry : entry.name;
+    const type = norm(typeof entry === "string" ? entry : entry.type || entry.name);
+    if (!name) return;
+    if (type.includes("cronograma")) database.cronograma.push(name);
+    else if (type.includes("pdf") || norm(name).endsWith(".pdf")) database.pdfs.push(name);
+    else database.kits.push(name);
   });
+  return database;
+}
+function asList(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
+}
+async function readWorkbookFromDoc(fileName, loaded) {
+  const bytes = await fetchDocBytes(fileName, loaded);
+  if (!bytes) return null;
+  return XLSX.read(bytes, { type: "array", cellDates: true });
+}
+async function readPdfFromDoc(fileName, loaded) {
+  const bytes = await fetchDocBytes(fileName, loaded);
+  if (!bytes) return null;
+  return new File([bytes], fileName, { type: "application/pdf" });
+}
+async function fetchDocBytes(fileName, loaded) {
+  const url = DOC_BASE_PATH + encodeURIComponent(fileName).replace(/%2F/g, "/");
+  try {
+    const response = await fetch(`${url}?ts=${Date.now()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  } catch {
+    loaded.missing.push(fileName);
+    return null;
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-// PAGE: LOGÍSTICA
-// ═══════════════════════════════════════════════════════════
-function renderLogistica(){
-  const data=CRONO;
-  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  const totalIca=data.reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0);
-  const icaByBloco=blocos.map(b=>({b,v:data.filter(r=>r[COL.BLOCO]===b).reduce((a,r)=>a+(Number(r[COL.ICAMENTO])||0),0)}));
-  const maxIca=Math.max(...icaByBloco.map(x=>x.v));
-
-  document.getElementById('kpi-logistica').innerHTML=`
-    <div class="kpi k-cyan"><div class="kpi-label">Içamento Total</div><div class="kpi-value">${Math.round(totalIca)}</div><div class="kpi-sub">Unidades programadas</div></div>
-    <div class="kpi k-blue"><div class="kpi-label">Pico Logístico</div><div class="kpi-value">${Math.round(maxIca)}</div><div class="kpi-sub">${icaByBloco.find(x=>x.v===maxIca)?.b||'—'}</div></div>
-    <div class="kpi k-amber"><div class="kpi-label">Entregas Semana</div><div class="kpi-value">${data.filter(r=>{const ini=excelDate(r[COL.INICIO]);return ini&&(ini-TODAY)/86400000<=7&&(ini-TODAY)/86400000>-1;}).length}</div><div class="kpi-sub">Kits a entregar</div></div>
-    <div class="kpi k-green"><div class="kpi-label">Blocos Planejados</div><div class="kpi-value">${blocos.length}</div><div class="kpi-sub">8 blocos total</div></div>
-  `;
-
-  // Içamento por bloco
-  destroyChart('icaBlock');
-  charts.icaBlock=new Chart(document.getElementById('icaBlockChart'),{
-    type:'bar',
-    data:{labels:blocos.map(b=>b.replace('Bloco ','')),datasets:[{label:'Içamento',data:icaByBloco.map(x=>Math.round(x.v)),backgroundColor:blocos.map(b=>BLOCOS_PAL[b]||'#3d8ef8'),borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
-  });
-
-  // Içamento por mês
-  const mIca={};
-  data.forEach(r=>{
-    const d=excelDate(r[COL.INICIO]);
-    if(!d) return;
-    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    mIca[k]=(mIca[k]||0)+(Number(r[COL.ICAMENTO])||0);
-  });
-  const mKeys=Object.keys(mIca).sort().slice(0,18);
-  const curM=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}`;
-  destroyChart('icaMonth');
-  charts.icaMonth=new Chart(document.getElementById('icaMonthChart'),{
-    type:'line',
-    data:{labels:mKeys.map(k=>{const[y,m]=k.split('-');return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2)}),
-      datasets:[{label:'Içamento',data:mKeys.map(k=>Math.round(mIca[k])),borderColor:'var(--cyan)',backgroundColor:'rgba(0,212,255,.08)',fill:true,tension:.4,pointBackgroundColor:mKeys.map(k=>k===curM?'var(--amber)':'var(--cyan)'),pointRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
-  });
-
-  // Linha de balanço
-  renderLinhaBalanco();
-
-  // Tabela logística
-  const logRows=data.filter(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    return ini&&(ini-TODAY)/86400000>=-14&&(ini-TODAY)/86400000<=21;
-  }).sort((a,b)=>excelDate(a[COL.INICIO])-excelDate(b[COL.INICIO]));
-
-  document.getElementById('logistica-tbody').innerHTML=logRows.map(r=>{
-    const ini=excelDate(r[COL.INICIO]);
-    const entrega=ini?addDays(ini,-2):null;
-    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
-    const s=getStatus(r);
-    const pill=s==='Concluído'?'<span class="pill pill-done"><span class="dot"></span>Concluído</span>':
-                s==='Em Andamento'?'<span class="pill pill-active"><span class="dot"></span>Ativo</span>':
-                '<span class="pill pill-future"><span class="dot"></span>Futuro</span>';
-    return `<tr>
-      <td class="name">${(r[COL.TAREFA]||'').slice(0,44)}…</td>
-      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
-      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
-      <td class="mono">${fmtDate(ini)}</td>
-      <td class="mono" style="color:var(--amber)">${fmtDate(entrega)}</td>
-      <td style="text-align:center;color:var(--amber);font-weight:700">${Number(r[COL.ICAMENTO])||'—'}</td>
-      <td>${pill}</td>
-    </tr>`;
-  }).join('');
-
-  // Balance filters
-  const blocsAll=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  document.getElementById('balance-filters').innerHTML=['Todos',...blocsAll].map(b=>
-    `<button class="fbtn${filterBloco===b?' active':''}" onclick="setBalFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
+function setLoading(active) {
+  document.body.classList.toggle("loading", active);
+  if (active && state.isLoadingBase) $("loadOverlay").classList.add("show");
+  if (!active && !state.isLoadingBase) $("loadOverlay").classList.remove("show");
+  renderLoadingOverlay();
 }
-
-function renderLinhaBalanco(){
-  const data=filterBloco==='Todos'?CRONO:CRONO.filter(r=>r[COL.BLOCO]===filterBloco);
-  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  const pavimentos=['3º','2º','1º','Térreo'];
-
-  // Datasets: each bloco is a "line" through paviments over time
-  const datasets=[];
-  blocos.forEach((b,bi)=>{
-    const bRows=data.filter(r=>r[COL.BLOCO]===b);
-    const points=pavimentos.map(pav=>{
-      const pavRows=bRows.filter(r=>r[COL.PAVIMENTO]===pav);
-      if(!pavRows.length) return null;
-      const ini=pavRows.map(r=>excelDate(r[COL.INICIO])).filter(Boolean).sort((a,c)=>a-c)[0];
-      const fim=pavRows.map(r=>excelDate(r[COL.FIM])).filter(Boolean).sort((a,c)=>c-a)[0];
-      return {x:ini?ini.toISOString().slice(0,10):null,y:PAV_ORDER[pav]??0,fim,pav,bloco:b};
-    }).filter(p=>p&&p.x);
-
-    if(!points.length) return;
-    datasets.push({
-      label:b,
-      data:points.map(p=>({x:p.x,y:p.y})),
-      borderColor:BLOCOS_PAL[b]||'#3d8ef8',
-      backgroundColor:(BLOCOS_PAL[b]||'#3d8ef8')+'33',
-      tension:.3,pointRadius:6,pointHoverRadius:8,
-      showLine:true,fill:false
+async function readWorkbook(file) {
+  const data = new Uint8Array(await file.arrayBuffer());
+  return XLSX.read(data, { type: "array", cellDates: true });
+}
+function parseCronograma(workbook) {
+  const sheetName = workbook.SheetNames.find((name) => norm(name).includes("cronograma")) || workbook.SheetNames[0];
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: true, defval: null });
+  return rows.map((row, index) => {
+    const keys = Object.keys(row);
+    const get = (...candidates) => {
+      const found = keys.find((key) => candidates.some((c) => norm(key) === norm(c) || norm(key).includes(norm(c))));
+      return found ? row[found] : null;
+    };
+    const inicio = excelDate(get("InÃ­cio", "Inicio"));
+    const fim = excelDate(get("Fim"));
+    const bloco = clean(get("Bloco"));
+    const pavimento = clean(get("Pavimento"));
+    const pacote = clean(get("Pacote"));
+    const tarefa = clean(get("Tarefa", "Atividade"));
+    const disciplinaRaw = clean(get("Disciplina"));
+    const discipline = disciplineBase(disciplinaRaw);
+    const id = `ACT-${norm([bloco, pavimento, pacote, tarefa, discipline].join("|")).replace(/[^a-z0-9]+/g, "-")}-${index}`;
+    return {
+      id,
+      sourceRow: index + 2,
+      bloco,
+      pavimento,
+      pacote,
+      tarefa,
+      disciplinaRaw,
+      discipline,
+      inicio,
+      fim,
+      duracao: asNumber(get("DuraÃ§Ã£o", "Duracao")),
+      icamento: asNumber(get("IÃ§amento", "Icamento")),
+      raw: row
+    };
+  }).filter((a) => a.bloco || a.tarefa || a.discipline);
+}
+function parseKitWorkbook(workbook, fileName) {
+  const items = [];
+  workbook.SheetNames.forEach((sheetName) => {
+    const matrix = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true, defval: null });
+    const headerIndex = findHeaderRow(matrix);
+    if (headerIndex < 0) return;
+    const headers = matrix[headerIndex].map(clean);
+    const groups = findItemGroups(headers);
+    groups.forEach((group, groupIndex) => {
+      const kitName = findNearbyHeader(matrix, headerIndex, group.code, "kit") || clean(sheetName);
+      const local = findNearbyHeader(matrix, headerIndex, group.code, "local") || inferPavimento(`${sheetName} ${kitName}`);
+      const discipline = inferDisciplineFromName(fileName, sheetName, kitName);
+      matrix.slice(headerIndex + 1).forEach((row, offset) => {
+        const code = clean(row[group.code]);
+        const description = clean(row[group.description]);
+        const quantity = clean(row[group.quantity]);
+        if (!code && !description && !quantity) return;
+        const dimension = clean(row[group.dimension]);
+        const estoque = clean(row[group.stock]);
+        const encomendar = clean(row[group.order]);
+        const entrega = excelDate(row[group.delivery]);
+        const titleLike = !code && description && !quantity;
+        if (titleLike) return;
+        const id = `KIT-${norm([fileName, sheetName, groupIndex, code, description, quantity, offset].join("|")).replace(/[^a-z0-9]+/g, "-")}`;
+        items.push({
+          id,
+          fileName,
+          sheetName,
+          kitName,
+          local,
+          pavimento: inferPavimento(`${local} ${sheetName} ${kitName}`),
+          discipline,
+          code,
+          description,
+          quantity,
+          dimension,
+          estoque,
+          encomendar,
+          entrega,
+          rowNumber: headerIndex + offset + 2,
+          incomplete: !code || !description || !quantity || needsOrder(encomendar) || noStock(estoque)
+        });
+      });
     });
   });
+  return items;
+}
+function findHeaderRow(matrix) {
+  let best = -1;
+  let bestScore = 0;
+  matrix.forEach((row, index) => {
+    const text = row.map(norm).join(" | ");
+    const score = ["codigo", "item", "descricao", "qtd", "quantidade", "dimensao", "estoque"].reduce((acc, key) => acc + (text.includes(key) ? 1 : 0), 0);
+    if (score > bestScore) { best = index; bestScore = score; }
+  });
+  return bestScore >= 2 ? best : -1;
+}
+function findItemGroups(headers) {
+  const groups = [];
+  headers.forEach((header, index) => {
+    const h = norm(header);
+    if (!h.includes("codigo")) return;
+    const next = (predicate, limit = 5) => {
+      for (let i = index; i <= Math.min(headers.length - 1, index + limit); i++) {
+        if (predicate(norm(headers[i]))) return i;
+      }
+      return -1;
+    };
+    const description = next((x) => x.includes("descricao") || x.includes("af e aq") || x.includes("exaustao") || x.includes("infra"));
+    const quantity = next((x) => x === "qtd" || x.includes("quantidade"), 6);
+    if (description >= 0 && quantity >= 0) {
+      groups.push({
+        code: index,
+        description,
+        quantity,
+        dimension: next((x) => x.includes("dimensao") || x === "und" || x.includes("coluna"), 7),
+        delivery: next((x) => x.includes("entrega"), 9),
+        order: next((x) => x.includes("encomendar") || x.includes("reordenar"), 9),
+        stock: next((x) => x.includes("estoque"), 9)
+      });
+    }
+  });
+  return groups;
+}
+function findNearbyHeader(matrix, headerIndex, column, keyword) {
+  for (let r = 0; r < headerIndex; r++) {
+    for (let c = Math.max(0, column - 3); c <= Math.min((matrix[r] || []).length - 1, column + 3); c++) {
+      const value = clean(matrix[r]?.[c]);
+      if (norm(value).includes(keyword)) return value.replace(/^Nome do Kit:\s*/i, "").replace(/^LOCAL:\s*/i, "");
+    }
+  }
+  return "";
+}
+function needsOrder(value) {
+  if (!value) return false;
+  const n = norm(value);
+  if (["nao", "nÃ£o", "no", "false", "0", "-"].includes(n)) return false;
+  return asNumber(value) > 0 || n.includes("sim") || n.includes("comprar") || n.includes("pedido");
+}
+function noStock(value) {
+  if (!value) return false;
+  const n = norm(value);
+  return n.includes("nao") || n.includes("sem") || n === "0";
+}
+async function parsePdf(file, options = {}) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!pdfjs) {
+    return { name: file.name, pages: 0, text: "", terms: [], bytes, needsOcr: false, warning: "PDF.js nÃ£o carregou. Verifique conexÃ£o com CDN." };
+  }
+  const pdf = await pdfjs.getDocument({ data: bytes.slice() }).promise;
+  const pageTexts = [];
+  const pageLimit = Math.min(pdf.numPages, options.maxPages || pdf.numPages);
+  for (let i = 1; i <= pageLimit; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    pageTexts.push(content.items.map((item) => item.str).join(" "));
+  }
+  const text = pageTexts.join("\n").replace(/\s+/g, " ").trim();
+  const terms = extractDocTerms(text);
+  return {
+    name: file.name,
+    pages: pdf.numPages,
+    text,
+    terms,
+    bytes,
+    needsOcr: text.length < 20,
+    ocrStatus: "",
+    warning: text.length < 20
+      ? "PDF escaneado/imagem: texto nÃ£o extraÃ­vel sem OCR."
+      : pageLimit < pdf.numPages
+        ? `Texto extraÃ­do das primeiras ${pageLimit} pÃ¡ginas para carregar a base mais rÃ¡pido.`
+        : ""
+  };
+}
+function extractDocTerms(text) {
+  const wanted = ["nomenclatura", "atualizaÃ§Ã£o", "atualizacao", "bloco", "pavimento", "kit", "disciplina", "revisÃ£o", "revisao"];
+  return [...new Set(wanted.filter((term) => norm(text).includes(norm(term))))];
+}
+async function runOcrDoc(index) {
+  const doc = state.documents[index];
+  if (!doc || !doc.bytes?.length) return;
+  if (!window.Tesseract) {
+    doc.warning = "Tesseract.js nÃ£o carregou. Verifique conexÃ£o com CDN.";
+    renderDocuments();
+    return;
+  }
+  doc.ocrStatus = "OCR em andamento...";
+  renderDocuments();
+  try {
+    const pdf = await pdfjs.getDocument({ data: doc.bytes.slice() }).promise;
+    const pageLimit = Math.min(pdf.numPages, 5);
+    const chunks = [];
+    for (let i = 1; i <= pageLimit; i++) {
+      doc.ocrStatus = `OCR pÃ¡gina ${i}/${pageLimit}`;
+      renderDocuments();
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 1.7 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const context = canvas.getContext("2d");
+      await page.render({ canvasContext: context, viewport }).promise;
+      const result = await window.Tesseract.recognize(canvas, "por");
+      chunks.push(result.data.text);
+    }
+    doc.text = chunks.join(" ").replace(/\s+/g, " ").trim();
+    doc.terms = extractDocTerms(doc.text);
+    doc.needsOcr = false;
+    doc.warning = pageLimit < pdf.numPages ? `OCR concluÃ­do nas primeiras ${pageLimit} pÃ¡ginas para manter o processamento leve.` : "";
+    doc.ocrStatus = "OCR concluÃ­do";
+  } catch (error) {
+    doc.warning = `OCR nÃ£o concluÃ­do: ${error.message}`;
+    doc.ocrStatus = "";
+  }
+  renderDocuments();
+}
+window.runOcrDoc = runOcrDoc;
 
-  destroyChart('balance');
-  charts.balance=new Chart(document.getElementById('balanceChart'),{
-    type:'scatter',
-    data:{datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#8ca4c8',font:{size:11}}}},
-      scales:{
-        x:{type:'time',time:{unit:'month',displayFormats:{month:'MMM/yy'}},ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'},title:{display:true,text:'Tempo',color:'#4d6385'}},
-        y:{min:-0.5,max:3.5,ticks:{color:'#8ca4c8',font:{size:11},callback:v=>['Térreo','1º','2º','3º'][Math.round(v)]||''},grid:{color:'rgba(30,45,66,.4)'},title:{display:true,text:'Pavimento',color:'#4d6385'}}
+function recompute() {
+  state.activities.forEach((a) => ensureControl(a.id));
+  state.kits = state.activities.map((activity) => buildKit(activity));
+  state.issues = buildIssues();
+  state.metrics = buildMetrics();
+  populateFilters();
+  renderAll();
+}
+function ensureControl(id) {
+  if (!state.kitControls[id]) state.kitControls[id] = { status: "Planejado", emergency: false, bottleneck: false, notes: "" };
+}
+function buildKit(activity) {
+  const matchedItems = matchItems(activity);
+  const control = state.kitControls[activity.id] || {};
+  const incompleteItems = matchedItems.filter((item) => item.incomplete);
+  const hasMissingMaterial = matchedItems.length === 0 || incompleteItems.length > 0;
+  const deliveryIdeal = addDays(activity.inicio, -2);
+  const itemDeliveries = matchedItems.map((item) => item.entrega).filter(Boolean);
+  const lateDelivery = itemDeliveries.some((date) => activity.inicio && date > activity.inicio);
+  const score = priorityScore(activity, control, hasMissingMaterial, lateDelivery, matchedItems.length === 0, incompleteItems.length > 0);
+  return {
+    activity,
+    id: activity.id,
+    control,
+    matchedItems,
+    incompleteItems,
+    hasMissingMaterial,
+    lateDelivery,
+    noKit: matchedItems.length === 0,
+    deliveryIdeal,
+    score,
+    risk: riskColor(score)
+  };
+}
+function matchItems(activity) {
+  const disc = norm(activity.discipline);
+  const pav = norm(activity.pavimento);
+  const tarefa = norm(activity.tarefa);
+  const pacote = norm(activity.pacote);
+  return state.kitItems.filter((item) => {
+    const itemText = norm(`${item.fileName} ${item.sheetName} ${item.kitName} ${item.local} ${item.pavimento} ${item.description} ${item.dimension}`);
+    const discMatch = norm(item.discipline) === disc || itemText.includes(disc);
+    const pavMatch = !pav || itemText.includes(pav) || itemText.includes(pav.replace("Âº", "")) || (pav.includes("terreo") && itemText.includes("terreo"));
+    const taskTokens = tarefa.split(" ").filter((t) => t.length > 4);
+    const taskMatch = taskTokens.some((token) => itemText.includes(token)) || (pacote && itemText.includes(pacote));
+    return discMatch && (pavMatch || taskMatch);
+  });
+}
+function priorityScore(activity, control, missing, lateDelivery, noKit, incomplete) {
+  const days = daysBetween(activity.inicio, TODAY);
+  let dateScore = 0;
+  if (days < 0) dateScore = 35;
+  else if (days <= 2) dateScore = 32;
+  else if (days <= 7) dateScore = 26;
+  else if (days <= 14) dateScore = 17;
+  else if (days <= 30) dateScore = 9;
+  const statusIndex = FLOW_STATES.indexOf(control.status || "Planejado");
+  const statusScore = clamp((FLOW_STATES.length - 1 - Math.max(statusIndex, 0)) / (FLOW_STATES.length - 1) * 20, 0, 20);
+  const materialScore = missing ? 16 : 0;
+  const deliveryScore = lateDelivery || noKit ? 4 : 0;
+  const bottleneckScore = control.bottleneck ? 10 : 0;
+  const emergencyScore = control.emergency ? 10 : 0;
+  const incompleteScore = incomplete ? 5 : 0;
+  return Math.round(dateScore + statusScore + materialScore + deliveryScore + bottleneckScore + emergencyScore + incompleteScore);
+}
+function buildIssues() {
+  const issues = [];
+  state.kits.forEach((kit) => {
+    const a = kit.activity;
+    if (kit.noKit) issues.push({ type: "Atividade sem kit", ref: `${a.bloco} ${a.pavimento} Â· ${a.tarefa}`, detail: "Nenhum item de kit associado por disciplina/pavimento/tarefa.", impact: "SeparaÃ§Ã£o sem lista de materiais." });
+    if (kit.incompleteItems.length) issues.push({ type: "Kit incompleto", ref: `${a.bloco} ${a.pavimento} Â· ${a.tarefa}`, detail: `${kit.incompleteItems.length} item(ns) com cÃ³digo, descriÃ§Ã£o, quantidade, estoque ou encomenda pendente.`, impact: "Risco de parada de produÃ§Ã£o." });
+    if (kit.lateDelivery) issues.push({ type: "Entrega depois do inÃ­cio", ref: `${a.bloco} ${a.pavimento} Â· ${a.tarefa}`, detail: "HÃ¡ material com data de entrega posterior ao inÃ­cio da atividade.", impact: "Atraso logÃ­stico." });
+  });
+  state.kitItems.forEach((item) => {
+    const matched = state.activities.some((a) => matchItems(a).some((i) => i.id === item.id));
+    if (!matched) issues.push({ type: "Kit sem atividade", ref: `${item.fileName} Â· ${item.sheetName}`, detail: `${item.description || item.kitName} nÃ£o encontrou atividade compatÃ­vel.`, impact: "Material pode estar fora do plano." });
+    if (!item.quantity) issues.push({ type: "Material sem quantidade", ref: `${item.fileName} Â· linha ${item.rowNumber}`, detail: item.description || "Item sem descriÃ§Ã£o.", impact: "ConferÃªncia incompleta." });
+    if (noStock(item.estoque)) issues.push({ type: "Item sem estoque", ref: `${item.fileName} Â· linha ${item.rowNumber}`, detail: item.description || item.code, impact: "Comprar ou reprogramar." });
+  });
+  return issues.slice(0, 500);
+}
+function buildMetrics() {
+  const total = state.kits.length;
+  const done = state.kits.filter((k) => ["Finalizado", "Em Uso"].includes(k.control.status)).length;
+  const delivered = state.kits.filter((k) => ["Entregue", "Em Uso", "Finalizado"].includes(k.control.status)).length;
+  const late = state.kits.filter((k) => daysBetween(TODAY, k.activity.inicio) > 0 && !["Finalizado", "Em Uso"].includes(k.control.status)).length;
+  const noIssue = state.kits.filter((k) => !k.noKit && !k.hasMissingMaterial && !k.lateDelivery).length;
+  const ppc = total ? done / total * 100 : 0;
+  const logistic = total ? state.kits.filter((k) => !k.lateDelivery && k.control.status !== "Planejado").length / total * 100 : 0;
+  const completeness = state.kitItems.length ? state.kitItems.filter((i) => !i.incomplete).length / state.kitItems.length * 100 : 0;
+  const waste = state.kitItems.length ? state.kitItems.filter((i) => i.incomplete).length / state.kitItems.length * 100 : 0;
+  const flow = total ? delivered / total * 100 : 0;
+  const lean = Math.round(ppc * .30 + logistic * .25 + completeness * .25 + (100 - (late / Math.max(total, 1) * 100)) * .20);
+  return { total, done, delivered, late, noIssue, ppc, logistic, completeness, waste, flow, lean };
+}
+
+function renderAll() {
+  renderLoadStatus();
+  renderExecutive();
+  renderFilteredTables();
+  renderWorkflow();
+  renderDocuments();
+}
+function renderLoadStatus() {
+  $("loadStatus").innerHTML = [
+    `<span class="chip blue">${state.activities.length} atividades</span>`,
+    `<span class="chip green">${state.kitItems.length} itens de kit</span>`,
+    `<span class="chip yellow">${state.issues.length} inconsistÃªncias</span>`,
+    `<span class="chip blue">${state.documents.length} PDFs</span>`
+  ].join("");
+  const health = [];
+  if (!state.activities.length) health.push("Carregue o cronograma para ativar o painel.");
+  if (!state.kitItems.length) health.push("Carregue as planilhas de kits para comparaÃ§Ã£o.");
+  if (state.activities.length && state.kitItems.length) health.push(`${state.metrics.noIssue} kits sem restriÃ§Ã£o crÃ­tica.`);
+  if (state.documents.some((d) => d.warning)) health.push("HÃ¡ PDF sem texto extraÃ­vel.");
+  if (state.currentLoadMessage) health.push(state.currentLoadMessage);
+  if (state.lastDocLoad) health.push(state.lastDocLoad);
+  $("healthBox").innerHTML = health.length ? health.map((x) => `<div class="chip ${x.includes("sem restriÃ§Ã£o") ? "green" : "yellow"}">${escapeHtml(x)}</div>`).join(" ") : "Aguardando arquivos.";
+  $("databaseStatus").innerHTML = state.loadSteps.map((step) => {
+    const cls = step.status === "done" ? "green" : step.status === "error" ? "red" : step.status === "warn" ? "yellow" : step.status === "running" ? "blue" : "";
+    return `<span class="chip ${cls}">${escapeHtml(step.name)}: ${escapeHtml(step.detail)}</span>`;
+  }).join("");
+  const hasError = state.loadSteps.some((step) => step.status === "error") || state.issues.length > 80;
+  const hasWarn = state.loadSteps.some((step) => step.status === "warn") || state.documents.some((d) => d.warning) || state.issues.length > 0;
+  $("healthToggle").className = `health-toggle ${hasError ? "bad" : hasWarn ? "warn" : "ok"}`;
+}
+function renderExecutive() {
+  const m = state.metrics;
+  $("kpiExecutive").innerHTML = [
+    kpi("Lean Score", pct(m.lean || 0), "PontuaÃ§Ã£o composta", "cyan"),
+    kpi("PPC", pct(m.ppc || 0), "Planejado concluÃ­do", "blue"),
+    kpi("Kits atrasados", m.late || 0, "Sem finalizaÃ§Ã£o no prazo", "red"),
+    kpi("EficiÃªncia logÃ­stica", pct(m.logistic || 0), "Fluxo sem atraso", "green"),
+    kpi("DesperdÃ­cio", pct(m.waste || 0), "Itens com pendÃªncia", "yellow"),
+    kpi("Produtividade", m.done || 0, "Finalizado ou em uso", "violet")
+  ].join("");
+  $("logEfficiency").textContent = pct(m.logistic || 0);
+  $("wasteValue").textContent = pct(m.waste || 0);
+  $("prodValue").textContent = m.done || 0;
+  renderCharts();
+}
+function kpi(label, value, sub, color) {
+  return `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value ${color}">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+}
+function renderCharts() {
+  const statusCounts = Object.fromEntries(FLOW_STATES.map((s) => [s, state.kits.filter((k) => k.control.status === s).length]));
+  const discCounts = countBy(state.activities, (a) => a.discipline);
+  const delayCounts = countBy(state.kits.filter((k) => daysBetween(TODAY, k.activity.inicio) > 0 && !["Em Uso", "Finalizado"].includes(k.control.status)), (k) => k.activity.bloco || "Sem bloco");
+  const months = [...new Set(state.activities.map((a) => a.inicio).filter(Boolean).map((d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`))].sort();
+  let planned = 0;
+  let executed = 0;
+  const plannedData = months.map((month) => {
+    planned += state.activities.filter((a) => a.inicio && `${a.inicio.getFullYear()}-${String(a.inicio.getMonth() + 1).padStart(2, "0")}` === month).length;
+    return planned;
+  });
+  const executedData = months.map((month) => {
+    executed += state.kits.filter((k) => k.activity.inicio && `${k.activity.inicio.getFullYear()}-${String(k.activity.inicio.getMonth() + 1).padStart(2, "0")}` === month && ["Em Uso", "Finalizado"].includes(k.control.status)).length;
+    return executed;
+  });
+  chart("statusChart", "doughnut", Object.keys(statusCounts), [{ data: Object.values(statusCounts), backgroundColor: ["#7f93b3", "#ffbf3d", "#36a3ff", "#a676ff", "#22d48a", "#20d8ff", "#1aeb9a"] }]);
+  chart("discChart", "bar", Object.keys(discCounts), [{ label: "Atividades", data: Object.values(discCounts), backgroundColor: "#36a3ff", borderRadius: 6 }]);
+  chart("curveChart", "line", months.map(labelMonth), [
+    { label: "Planejado", data: plannedData, borderColor: "#36a3ff", backgroundColor: "rgba(54,163,255,.1)", fill: true, tension: .35 },
+    { label: "Executado", data: executedData, borderColor: "#22d48a", backgroundColor: "rgba(34,212,138,.08)", fill: true, tension: .35 }
+  ]);
+  chart("delayChart", "bar", Object.keys(delayCounts), [{ label: "Atrasos", data: Object.values(delayCounts), backgroundColor: "#ff4d6d", borderRadius: 6 }]);
+}
+function chart(id, type, labels, datasets) {
+  if (state.charts[id]) state.charts[id].destroy();
+  state.charts[id] = new Chart($(id), {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#7f93b3" } } },
+      scales: type === "doughnut" ? undefined : {
+        x: { ticks: { color: "#7f93b3" }, grid: { color: "rgba(35,52,79,.45)" } },
+        y: { ticks: { color: "#7f93b3" }, grid: { color: "rgba(35,52,79,.45)" } }
       }
     }
   });
 }
-
-function setBalFilter(b){filterBloco=b;renderLogistica();}
-window.setBalFilter=setBalFilter;
-
-// ═══════════════════════════════════════════════════════════
-// PAGE: LEAN SCORE
-// ═══════════════════════════════════════════════════════════
-function renderLean(){
-  const data=CRONO;
-  const total=data.length;
-  const done=data.filter(r=>getStatus(r)==='Concluído').length;
-  const active=data.filter(r=>getStatus(r)==='Em Andamento').length;
-  const future=data.filter(r=>getStatus(r)==='Futuro').length;
-
-  const ppc=total>0?Math.round((done+active*0.5)/total*100):0;
-  const fluxo=active>0?Math.min(100,Math.round(active/Math.max(1,total)*1000)):0;
-  const atrasoRisk=data.filter(r=>{const fim=excelDate(r[COL.FIM]);return fim&&fim<TODAY&&getStatus(r)!=='Concluído';}).length;
-  const atrasoScore=Math.max(0,100-Math.round(atrasoRisk/total*500));
-  const leanScore=Math.round(ppc*0.4+fluxo*0.3+atrasoScore*0.3);
-
-  document.getElementById('lean-score-val').textContent=leanScore+'%';
-  document.getElementById('kpi-lean').innerHTML=`
-    <div class="kpi k-blue"><div class="kpi-label">PPC</div><div class="kpi-value">${ppc}%</div><div class="kpi-sub">% Planejado Concluído</div></div>
-    <div class="kpi k-amber"><div class="kpi-label">Fluxo Score</div><div class="kpi-value">${fluxo}</div><div class="kpi-sub">Atividades fluindo</div></div>
-    <div class="kpi k-rose"><div class="kpi-label">Riscos Atraso</div><div class="kpi-value">${atrasoRisk}</div><div class="kpi-sub">Atividades em risco</div></div>
-    <div class="kpi k-green"><div class="kpi-label">Confiabilidade</div><div class="kpi-value">${atrasoScore}%</div><div class="kpi-sub">Planejamento estável</div></div>
-  `;
-
-  document.getElementById('lean-components').innerHTML=[
-    ['PPC (40%)',ppc,'var(--blue)'],
-    ['Fluxo Contínuo (30%)',Math.min(100,fluxo),'var(--amber)'],
-    ['Controle de Atrasos (30%)',atrasoScore,'var(--emerald)']
-  ].map(([l,v,c])=>`
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:12px;color:var(--text2)">${l}</span>
-        <span style="font-size:12px;font-weight:700;color:${c};font-family:var(--font-mono)">${v}%</span>
-      </div>
-      <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden">
-        <div style="height:100%;width:${v}%;background:${c};border-radius:4px;transition:width .5s"></div>
-      </div>
-    </div>`).join('');
-
-  // Gauge
-  const gCtx=document.getElementById('leanGauge').getContext('2d');
-  const score=leanScore/100;
-  gCtx.clearRect(0,0,200,110);
-  gCtx.beginPath();gCtx.arc(100,100,80,Math.PI,2*Math.PI);gCtx.strokeStyle='#1d2a3f';gCtx.lineWidth=14;gCtx.stroke();
-  const grad=gCtx.createLinearGradient(20,100,180,100);
-  grad.addColorStop(0,'#ff3d6b');grad.addColorStop(.5,'#ffb320');grad.addColorStop(1,'#00e5a0');
-  gCtx.beginPath();gCtx.arc(100,100,80,Math.PI,Math.PI+score*Math.PI);gCtx.strokeStyle=grad;gCtx.lineWidth=14;gCtx.lineCap='round';gCtx.stroke();
-
-  // Heatmap
-  const blocos=[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort();
-  const pavimentos=['3º','2º','1º','Térreo'];
-  document.getElementById('heatmap-container').innerHTML=`
-    <div style="overflow-x:auto">
-      <table style="border-collapse:collapse;width:100%">
-        <thead><tr>
-          <th style="font-size:10px;color:var(--text3);padding:6px;text-align:left;font-family:var(--font-mono)">Pav.</th>
-          ${blocos.map(b=>`<th style="font-size:10px;color:var(--text3);padding:6px;text-align:center;font-family:var(--font-mono)">${b.replace('Bloco ','B')}</th>`).join('')}
-        </tr></thead>
-        <tbody>
-        ${pavimentos.map(pav=>`<tr>
-          <td style="font-size:11px;color:var(--text2);padding:6px;font-family:var(--font-mono);font-weight:700">${pav}</td>
-          ${blocos.map(b=>{
-            const rows=data.filter(r=>r[COL.BLOCO]===b&&r[COL.PAVIMENTO]===pav);
-            const ativas=rows.filter(r=>getStatus(r)==='Em Andamento').length;
-            const futuras=rows.filter(r=>getStatus(r)==='Futuro').length;
-            const done=rows.filter(r=>getStatus(r)==='Concluído').length;
-            const total=rows.length;
-            if(!total) return `<td style="padding:4px"><div style="height:36px;border-radius:4px;background:var(--bg2);border:1px solid var(--border)"></div></td>`;
-            const intensity=ativas>0?1:done/total;
-            const col=ativas>0?`rgba(61,142,248,${0.15+intensity*0.7})`:done===total?`rgba(0,229,160,${0.15+0.7})`:`rgba(255,179,32,${0.1+intensity*0.5})`;
-            const textCol=ativas>0?'var(--blue)':done===total?'var(--emerald)':'var(--amber)';
-            return `<td style="padding:4px"><div style="height:36px;border-radius:4px;background:${col};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${textCol};font-family:var(--font-mono)">${total}</div></td>`;
-          }).join('')}
-        </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-
-  // Curva S
-  const mCum={planned:[],done:[]};
-  const mKeys=[];
-  const mPMap={},mDMap={};
-  data.forEach(r=>{
-    const d=excelDate(r[COL.INICIO]);if(!d) return;
-    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    mPMap[k]=(mPMap[k]||0)+1;
-    if(getStatus(r)==='Concluído'||getStatus(r)==='Em Andamento'){const fd=excelDate(r[COL.FIM]);if(fd){const fk=`${fd.getFullYear()}-${String(fd.getMonth()+1).padStart(2,'0')}`;mDMap[fk]=(mDMap[fk]||0)+1;}}
-  });
-  const allKeys=[...new Set([...Object.keys(mPMap),...Object.keys(mDMap)])].sort().slice(0,18);
-  let cumP=0,cumD=0;
-  const curvaDLabels=[],curvaP=[],curvaD=[];
-  allKeys.forEach(k=>{
-    cumP+=(mPMap[k]||0);cumD+=(mDMap[k]||0);
-    const[y,m]=k.split('-');
-    curvaDLabels.push(['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(m)-1]+'/'+y.slice(2));
-    curvaP.push(cumP);curvaD.push(cumD);
-  });
-  destroyChart('curvaS');
-  charts.curvaS=new Chart(document.getElementById('curvaSChart'),{
-    type:'line',
-    data:{labels:curvaDLabels,datasets:[
-      {label:'Planejado',data:curvaP,borderColor:'var(--blue)',backgroundColor:'rgba(61,142,248,.08)',fill:true,tension:.4,pointRadius:3},
-      {label:'Executado',data:curvaD,borderColor:'var(--emerald)',backgroundColor:'rgba(0,229,160,.06)',fill:true,tension:.4,pointRadius:3}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8ca4c8',font:{size:11}}}},
-      scales:{x:{ticks:{color:'#4d6385',font:{size:9},maxRotation:45,autoSkip:false},grid:{color:'rgba(30,45,66,.4)'}},y:{ticks:{color:'#4d6385',font:{size:10}},grid:{color:'rgba(30,45,66,.4)'}}}}
-  });
-
-  // Restrições (Last Planner)
-  const restricoes=[
-    {tipo:'Material faltando',icon:'📦',rows:CRONO.filter(r=>getStatus(r)==='Futuro'&&excelDate(r[COL.INICIO])&&(excelDate(r[COL.INICIO])-TODAY)/86400000<=3).slice(0,3)},
-    {tipo:'Atividade bloqueada',icon:'🚧',rows:CRONO.filter(r=>getStatus(r)==='Em Andamento'&&(Number(r[COL.ICAMENTO])||0)===0).slice(0,3)},
-    {tipo:'Içamento pendente',icon:'🏗️',rows:CRONO.filter(r=>getStatus(r)==='Futuro'&&(Number(r[COL.ICAMENTO])||0)>10).slice(0,3)},
-  ];
-  document.getElementById('restricoes-count').textContent=`${restricoes.reduce((a,r)=>a+r.rows.length,0)} restrições identificadas`;
-  document.getElementById('restricoes-container').innerHTML=restricoes.filter(r=>r.rows.length>0).map(r=>`
-    <div style="margin-bottom:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">${r.icon} ${r.tipo}</div>
-      ${r.rows.map(row=>`
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:6px;margin-bottom:4px">
-          <span class="btag" style="background:${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'}22;color:${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'};border:1px solid ${BLOCOS_PAL[row[COL.BLOCO]]||'#3d8ef8'}44">${(row[COL.BLOCO]||'').replace('Bloco ','B')}</span>
-          <span style="font-size:12px;color:var(--text2);flex:1">${(row[COL.TAREFA]||'').slice(0,60)}</span>
-          <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono)">${fmtDate(excelDate(row[COL.INICIO]))}</span>
-        </div>`).join('')}
-    </div>`).join('');
+function labelMonth(month) {
+  const [y, m] = month.split("-");
+  return `${m}/${y.slice(2)}`;
 }
-
-// ═══════════════════════════════════════════════════════════
-// PAGE: ETIQUETAS
-// ═══════════════════════════════════════════════════════════
-let selectedRow=null;
-function renderEtiqueta(){
-  const data=CRONO;
-  const blocos=['Todos',...[...new Set(data.map(r=>r[COL.BLOCO]).filter(Boolean))].sort()];
-  document.getElementById('etiqueta-bloco-filters').innerHTML=blocos.map(b=>
-    `<button class="fbtn${filterEtiquetaBloco===b?' active':''}" onclick="setEtqFilter('${b}')">${b.replace('Bloco ','B')}</button>`).join('');
-
-  const rows=(filterEtiquetaBloco==='Todos'?data:data.filter(r=>r[COL.BLOCO]===filterEtiquetaBloco)).slice(0,50);
-  document.getElementById('etiqueta-tbody').innerHTML=rows.map((r,i)=>{
-    const col=BLOCOS_PAL[r[COL.BLOCO]]||'#3d8ef8';
+function countBy(list, fn) {
+  return list.reduce((acc, item) => {
+    const key = fn(item) || "NÃ£o informado";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+}
+function populateFilters() {
+  const disciplines = [...new Set(state.activities.map((a) => a.discipline).filter(Boolean))].sort();
+  $("priorityDiscipline").innerHTML = `<option value="">Todas disciplinas</option>${disciplines.map((d) => `<option>${escapeHtml(d)}</option>`).join("")}`;
+}
+function renderFilteredTables() {
+  renderPriorities();
+  renderLogistics();
+  renderIssues();
+  renderItems();
+  renderActivities();
+}
+function renderPriorities() {
+  const q = norm($("prioritySearch").value);
+  const disc = norm($("priorityDiscipline").value);
+  const risk = $("priorityRisk").value;
+  const rows = state.kits
+    .filter((k) => !q || norm(`${k.activity.bloco} ${k.activity.pavimento} ${k.activity.tarefa} ${k.activity.discipline}`).includes(q))
+    .filter((k) => !disc || norm(k.activity.discipline) === disc)
+    .filter((k) => !risk || k.risk === risk)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 120);
+  $("priorityCount").textContent = `${rows.length} kits`;
+  $("priorityTable").innerHTML = rows.map((k, index) => {
+    const a = k.activity;
     return `<tr>
-      <td class="name" title="${r[COL.TAREFA]}">${(r[COL.TAREFA]||'').slice(0,40)}${(r[COL.TAREFA]||'').length>40?'…':''}</td>
-      <td><span class="btag" style="background:${col}22;color:${col};border:1px solid ${col}44">${(r[COL.BLOCO]||'').replace('Bloco ','B')}</span></td>
-      <td class="mono">${r[COL.PAVIMENTO]||'—'}</td>
-      <td class="mono">${r[COL.PACOTE]||'—'}</td>
-      <td style="font-size:11px;color:var(--text3)">${discBase(r[COL.DISCIPLINA])||'—'}</td>
-      <td class="mono">${fmtDate(excelDate(r[COL.INICIO]))}</td>
-      <td><button onclick="selectRow(${i})" style="padding:4px 10px;background:var(--blue3);border:1px solid var(--blue2);border-radius:5px;color:var(--cyan);font-size:11px;font-weight:700;cursor:pointer">Gerar</button></td>
+      <td class="rank">${index + 1}</td>
+      <td><strong>${escapeHtml(a.tarefa || "Sem tarefa")}</strong><br><span class="hint">${escapeHtml([a.bloco, a.pavimento, a.discipline].filter(Boolean).join(" Â· "))}</span></td>
+      <td><span class="pill ${pillClass(k.risk)}">${k.score}/100</span><div class="scorebar"><div class="scorefill" style="width:${k.score}%;background:var(--${k.risk === "red" ? "red" : k.risk === "yellow" ? "yellow" : k.risk === "green" ? "green" : "blue"})"></div></div></td>
+      <td>${fmtDate(a.inicio)}<br><span class="hint">${daysLabel(a.inicio)}</span></td>
+      <td>${materialPills(k)}</td>
+      <td><span class="pill info">${escapeHtml(k.control.status)}</span></td>
+      <td>${controlSummary(k)}</td>
     </tr>`;
-  }).join('');
+  }).join("") || emptyRow(7, "Nenhum kit encontrado.");
 }
-function setEtqFilter(b){filterEtiquetaBloco=b;renderEtiqueta();}
-window.setEtqFilter=setEtqFilter;
-function selectRow(i){
-  const rows=(filterEtiquetaBloco==='Todos'?CRONO:CRONO.filter(r=>r[COL.BLOCO]===filterEtiquetaBloco)).slice(0,50);
-  selectedRow=rows[i];
-  if(!selectedRow) return;
-  const disc=discBase(selectedRow[COL.DISCIPLINA])||'—';
-  const ini=fmtDate(excelDate(selectedRow[COL.INICIO]));
-  const entrega=fmtDate(addDays(excelDate(selectedRow[COL.INICIO])||TODAY,-2));
-  const codigo=`KIT-${(selectedRow[COL.BLOCO]||'').replace('Bloco ','B').replace(' ','')}-P${selectedRow[COL.PACOTE]||'0'}-${disc.slice(0,3).toUpperCase()}`;
-  document.getElementById('etiqueta-preview').innerHTML=`
-    <div class="etiqueta" id="etiqueta-print">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;border-bottom:2px solid #111;padding-bottom:8px">
-        <div style="width:28px;height:28px;background:#111;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px">LF</div>
-        <div class="etiqueta-title">LeanFlow · Kit Material</div>
-      </div>
-      <div class="etiqueta-qr">▪▪▪▪<br>QR<br>CODE<br>▪▪▪▪</div>
-      <div class="etiqueta-field"><span>Código:</span> ${codigo}</div>
-      <div class="etiqueta-field"><span>Bloco:</span> ${selectedRow[COL.BLOCO]||'—'}</div>
-      <div class="etiqueta-field"><span>Pavimento:</span> ${selectedRow[COL.PAVIMENTO]||'—'}</div>
-      <div class="etiqueta-field"><span>Pacote:</span> ${selectedRow[COL.PACOTE]||'—'}</div>
-      <div class="etiqueta-field"><span>Disciplina:</span> ${disc}</div>
-      <div class="etiqueta-field"><span>Tarefa:</span> ${(selectedRow[COL.TAREFA]||'').slice(0,50)}</div>
-      <div class="etiqueta-field"><span>Içamento:</span> ${Number(selectedRow[COL.ICAMENTO])||0} un</div>
-      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #999">
-        <div class="etiqueta-field"><span>Início Atividade:</span> ${ini}</div>
-        <div class="etiqueta-field"><span>Entregar até:</span> ${entrega}</div>
-      </div>
-      <div style="margin-top:8px;font-size:10px;color:#888;text-align:center">${codigo} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</div>
+function pillClass(risk) {
+  return risk === "red" ? "bad" : risk === "yellow" ? "warn" : risk === "green" ? "ok" : "info";
+}
+function daysLabel(date) {
+  const d = daysBetween(date, TODAY);
+  if (!date) return "sem data";
+  if (d < 0) return `${Math.abs(d)} dia(s) atrasado`;
+  if (d === 0) return "inicia hoje";
+  return `inicia em ${d} dia(s)`;
+}
+function materialPills(k) {
+  const pills = [];
+  if (k.noKit) pills.push(`<span class="pill bad">sem kit</span>`);
+  if (k.incompleteItems.length) pills.push(`<span class="pill warn">${k.incompleteItems.length} pendÃªncia(s)</span>`);
+  if (k.lateDelivery) pills.push(`<span class="pill bad">entrega tardia</span>`);
+  if (!pills.length) pills.push(`<span class="pill ok">${k.matchedItems.length} itens ok</span>`);
+  return pills.join(" ");
+}
+function controlSummary(k) {
+  return [
+    k.control.emergency ? `<span class="pill bad">emergÃªncia</span>` : "",
+    k.control.bottleneck ? `<span class="pill warn">gargalo</span>` : "",
+    k.control.notes ? `<span class="pill info">obs</span>` : ""
+  ].join(" ") || `<span class="hint">sem marcaÃ§Ã£o</span>`;
+}
+function renderWorkflow() {
+  $("workflowBoard").innerHTML = FLOW_STATES.map((stateName) => {
+    const rows = state.kits.filter((k) => k.control.status === stateName).sort((a, b) => b.score - a.score).slice(0, 40);
+    return `<div class="lane" data-state="${stateName}">
+      <div class="lane-head"><span>${stateName}</span><span>${rows.length}</span></div>
+      ${rows.map(kanbanCard).join("")}
     </div>`;
+  }).join("");
+  document.querySelectorAll(".lane").forEach((lane) => {
+    lane.addEventListener("dragover", (event) => event.preventDefault());
+    lane.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const id = event.dataTransfer.getData("text/plain");
+      if (!id) return;
+      ensureControl(id);
+      state.kitControls[id].status = lane.dataset.state;
+      saveControls();
+      recompute();
+    });
+  });
+  document.querySelectorAll(".kan-card").forEach((card) => {
+    card.addEventListener("dragstart", (event) => event.dataTransfer.setData("text/plain", card.dataset.id));
+  });
+  renderManualControls();
 }
-window.selectRow=selectRow;
-function printEtiqueta(){
-  const el=document.getElementById('etiqueta-print');
-  if(!el){alert('Selecione uma atividade primeiro.');return;}
-  const w=window.open('','_blank');
-  w.document.write(`<html><head><title>Etiqueta</title><style>body{margin:0;padding:20px;font-family:monospace}*{box-sizing:border-box}</style></head><body>${el.outerHTML}</body></html>`);
-  w.document.close();w.print();
+function kanbanCard(k) {
+  const a = k.activity;
+  return `<div class="kan-card" draggable="true" data-id="${k.id}">
+    <div class="kan-title">${escapeHtml(a.tarefa || "Sem tarefa")}</div>
+    <div class="kan-meta">
+      <span class="mini">${escapeHtml(a.bloco || "-")}</span>
+      <span class="mini">${escapeHtml(a.pavimento || "-")}</span>
+      <span class="mini">${escapeHtml(a.discipline)}</span>
+      <span class="mini">${k.score}</span>
+    </div>
+  </div>`;
 }
-window.printEtiqueta=printEtiqueta;
-*/
-// ═══════════════════════════════════════════════════════════
-// UPLOAD
-// ═══════════════════════════════════════════════════════════
-document.getElementById('uploadCrono').addEventListener('change',function(e){
-  const file=e.target.files[0];if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true,defval:null});
-      if(!rows.length){alert('Arquivo vazio.');return;}
-      renderAll(rows);
-    }catch(err){alert('Erro: '+err.message);}
-  };
-  reader.readAsArrayBuffer(file);this.value='';
-});
-document.getElementById('uploadKits').addEventListener('change',function(e){
-  const file=e.target.files[0];if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});
-      KITS=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:true,defval:null});
-      alert(`✅ ${KITS.length} kits carregados com sucesso!`);
-    }catch(err){alert('Erro: '+err.message);}
-  };
-  reader.readAsArrayBuffer(file);this.value='';
-});
+function renderManualControls() {
+  const rows = state.kits.sort((a, b) => b.score - a.score).slice(0, 60);
+  $("manualControls").innerHTML = rows.map((k) => {
+    const c = k.control;
+    return `<div class="control-row">
+      <label><strong>${escapeHtml(k.activity.tarefa || "Sem tarefa")}</strong><br>${escapeHtml([k.activity.bloco, k.activity.pavimento, k.activity.discipline].filter(Boolean).join(" Â· "))}</label>
+      <select class="field" data-control="status" data-id="${k.id}">${FLOW_STATES.map((s) => `<option ${c.status === s ? "selected" : ""}>${s}</option>`).join("")}</select>
+      <label><input type="checkbox" data-control="emergency" data-id="${k.id}" ${c.emergency ? "checked" : ""}> Emerg.</label>
+      <label><input type="checkbox" data-control="bottleneck" data-id="${k.id}" ${c.bottleneck ? "checked" : ""}> Gargalo</label>
+      <textarea class="field" data-control="notes" data-id="${k.id}" placeholder="ObservaÃ§Ã£o">${escapeHtml(c.notes || "")}</textarea>
+    </div>`;
+  }).join("") || `<div class="empty">Carregue o cronograma para editar controles.</div>`;
+  document.querySelectorAll("[data-control]").forEach((el) => {
+    el.addEventListener("change", updateControl);
+    el.addEventListener("input", updateControl);
+  });
+}
+function updateControl(event) {
+  const id = event.target.dataset.id;
+  const field = event.target.dataset.control;
+  ensureControl(id);
+  state.kitControls[id][field] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+  saveControls();
+  state.kits = state.activities.map((activity) => buildKit(activity));
+  state.issues = buildIssues();
+  state.metrics = buildMetrics();
+  renderAll();
+}
+function renderLogistics() {
+  $("logisticsTable").innerHTML = state.kits.sort((a, b) => (a.activity.inicio || 0) - (b.activity.inicio || 0)).slice(0, 250).map((k) => {
+    const a = k.activity;
+    return `<tr>
+      <td><strong>${escapeHtml(a.tarefa || "Sem tarefa")}</strong></td>
+      <td>${escapeHtml(a.bloco)}</td>
+      <td>${escapeHtml(a.pavimento)}</td>
+      <td>${escapeHtml(a.discipline)}</td>
+      <td class="mono">${fmtDate(a.inicio)}</td>
+      <td class="mono">${fmtDate(k.deliveryIdeal)}</td>
+      <td>${a.icamento || 0}</td>
+      <td><span class="pill info">${escapeHtml(k.control.status)}</span></td>
+      <td>${materialPills(k)} ${controlSummary(k)}</td>
+    </tr>`;
+  }).join("") || emptyRow(9, "Nenhum dado logÃ­stico carregado.");
+}
+function renderIssues() {
+  $("issueCount").textContent = `${state.issues.length} problemas`;
+  $("issuesTable").innerHTML = state.issues.slice(0, 250).map((i) => `<tr><td><span class="pill ${i.type.includes("sem") || i.type.includes("incompleto") ? "bad" : "warn"}">${escapeHtml(i.type)}</span></td><td>${escapeHtml(i.ref)}</td><td>${escapeHtml(i.detail)}</td><td>${escapeHtml(i.impact)}</td></tr>`).join("") || emptyRow(4, "Nenhuma inconsistÃªncia identificada.");
+}
+function renderItems() {
+  const q = norm($("itemSearch").value);
+  const rows = state.kitItems.filter((i) => !q || norm(`${i.fileName} ${i.sheetName} ${i.kitName} ${i.code} ${i.description}`).includes(q)).slice(0, 300);
+  $("itemCount").textContent = `${state.kitItems.length} itens`;
+  $("itemsTable").innerHTML = rows.map((i) => `<tr>
+    <td><strong>${escapeHtml(i.fileName)}</strong><br><span class="hint">${escapeHtml(i.sheetName)}</span></td>
+    <td>${escapeHtml(i.kitName)}<br><span class="hint">${escapeHtml([i.discipline, i.pavimento || i.local].filter(Boolean).join(" Â· "))}</span></td>
+    <td class="mono">${escapeHtml(i.code || "-")}</td>
+    <td>${escapeHtml(i.description || "-")}</td>
+    <td>${escapeHtml(i.quantity || "-")}<br><span class="hint">${escapeHtml(i.dimension || "")}</span></td>
+    <td>${i.incomplete ? `<span class="pill warn">pendente</span>` : `<span class="pill ok">ok</span>`}</td>
+  </tr>`).join("") || emptyRow(6, "Nenhum item de kit carregado.");
+}
+function renderActivities() {
+  const q = norm($("activitySearch").value);
+  const rows = state.activities.filter((a) => !q || norm(`${a.bloco} ${a.pavimento} ${a.tarefa} ${a.discipline}`).includes(q)).slice(0, 300);
+  $("activityCount").textContent = `${state.activities.length} atividades`;
+  $("activitiesTable").innerHTML = rows.map((a) => `<tr>
+    <td>${escapeHtml(a.bloco)}</td><td>${escapeHtml(a.pavimento)}</td><td>${escapeHtml(a.pacote)}</td><td>${escapeHtml(a.tarefa)}</td><td>${escapeHtml(a.discipline)}</td><td class="mono">${fmtDate(a.inicio)}</td><td class="mono">${fmtDate(a.fim)}</td><td>${a.icamento || 0}</td>
+  </tr>`).join("") || emptyRow(8, "Nenhuma atividade carregada.");
+}
+function renderDocuments() {
+  $("docCount").textContent = `${state.documents.length} documentos`;
+  $("documentsGrid").innerHTML = state.documents.map((doc, index) => `<article class="doc-card">
+    <h3>${escapeHtml(doc.name)}</h3>
+    <p class="hint" style="margin-top:4px">${doc.pages} pÃ¡gina(s) Â· ${doc.text.length} caracteres extraÃ­dos</p>
+    <div class="statusline">${doc.terms.map((t) => `<span class="chip blue">${escapeHtml(t)}</span>`).join("") || `<span class="chip yellow">sem termos-chave</span>`}</div>
+    ${doc.needsOcr && doc.bytes?.length ? `<button class="btn good" style="margin-top:10px" onclick="runOcrDoc(${index})">Tentar OCR</button>` : ""}
+    ${doc.ocrStatus ? `<p class="hint blue" style="margin-top:10px">${escapeHtml(doc.ocrStatus)}</p>` : ""}
+    ${doc.warning ? `<p class="hint red" style="margin-top:10px">${escapeHtml(doc.warning)}</p>` : `<p class="hint" style="margin-top:10px">${escapeHtml(doc.text.slice(0, 380))}${doc.text.length > 380 ? "..." : ""}</p>`}
+  </article>`).join("") || `<div class="empty">Carregue PDFs de atualizaÃ§Ã£o ou nomenclatura.</div>`;
+}
+function emptyRow(cols, message) {
+  return `<tr><td colspan="${cols}"><div class="empty">${message}</div></td></tr>`;
+}
+function mergeByKey(list, keyFn) {
+  return [...new Map(list.map((item) => [keyFn(item), item])).values()];
+}
 
-// ═══════════════════════════════════════════════════════════
-// DADOS DEMO (substituídos pelo upload)
-// ═══════════════════════════════════════════════════════════
-const DEMO=[
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:2,Tarefa:'Demolição e retirada de portas e marcenaria',Disciplina:'Estruturas(8)',Início:new Date('2026-02-02'),Fim:new Date('2026-02-13'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:2,Tarefa:'Demolição de elétrica e network',Disciplina:'Elétrica(4)',Início:new Date('2026-02-02'),Fim:new Date('2026-02-13'),'Duração_dias_úteis':10,'Içamento_total':1},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:3,Tarefa:'Demolição e retirada de louças e metais',Disciplina:'Hidráulica(10)',Início:new Date('2026-02-09'),Fim:new Date('2026-02-20'),'Duração_dias_úteis':10,'Içamento_total':5},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:3,Tarefa:'Demolição e retirada de vidros e pisos',Disciplina:'Estruturas(10)',Início:new Date('2026-02-09'),Fim:new Date('2026-02-20'),'Duração_dias_úteis':10,'Içamento_total':4},
-  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:5,Tarefa:'Levante de paredes e regularização de banheiros',Disciplina:'Revestimento(4)',Início:new Date('2026-02-23'),Fim:new Date('2026-02-27'),'Duração_dias_úteis':5,'Içamento_total':4},
-  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:6,Tarefa:'Instalação hidráulica geral',Disciplina:'Hidráulica(6)',Início:new Date('2026-04-20'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':25,'Içamento_total':3},
-  {Bloco:'Bloco 20',Pavimento:'1º',Pacote:8,Tarefa:'Revestimento de piso e parede',Disciplina:'Revestimento(4)',Início:new Date('2026-05-10'),Fim:new Date('2026-06-01'),'Duração_dias_úteis':15,'Içamento_total':5},
-  {Bloco:'Bloco 20',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamentos gerais e pintura',Disciplina:'Acabamentos(6)',Início:new Date('2026-07-01'),Fim:new Date('2026-08-01'),'Duração_dias_úteis':22,'Içamento_total':8},
-  {Bloco:'Bloco 20',Pavimento:'Térreo',Pacote:14,Tarefa:'Instalação de esquadrias e vidros',Disciplina:'Contratadas',Início:new Date('2026-07-15'),Fim:new Date('2026-08-11'),'Duração_dias_úteis':20,'Içamento_total':2},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Cabeamento para energia elétrica geral',Disciplina:'Elétrica(4)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Instalação de ar condicionado',Disciplina:'Hidráulica(5)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':6},
-  {Bloco:'Bloco 20',Pavimento:'3º',Pacote:12,Tarefa:'Revestimento de piso laminado',Disciplina:'Estruturas',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
-  {Bloco:'Bloco 20',Pavimento:'2º',Pacote:11,Tarefa:'Preparação e 1ª demão de pintura',Disciplina:'Acabamentos(20)',Início:new Date('2026-05-18'),Fim:new Date('2026-05-29'),'Duração_dias_úteis':10,'Içamento_total':4},
-  {Bloco:'Bloco 20',Pavimento:'1º',Pacote:9,Tarefa:'Forro de Drywall estrutura e emplacamento',Disciplina:'Acabamentos(9)',Início:new Date('2026-05-11'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':10,'Içamento_total':7},
-  {Bloco:'Bloco 19',Pavimento:'3º',Pacote:2,Tarefa:'Demolição estrutural interna',Disciplina:'Estruturas(8)',Início:new Date('2026-04-06'),Fim:new Date('2026-04-17'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 19',Pavimento:'3º',Pacote:3,Tarefa:'Remoção de instalações hidráulicas antigas',Disciplina:'Hidráulica(6)',Início:new Date('2026-04-13'),Fim:new Date('2026-04-24'),'Duração_dias_úteis':10,'Içamento_total':5},
-  {Bloco:'Bloco 19',Pavimento:'2º',Pacote:5,Tarefa:'Instalação elétrica provisória',Disciplina:'Elétrica(4)',Início:new Date('2026-05-01'),Fim:new Date('2026-05-22'),'Duração_dias_úteis':16,'Içamento_total':2},
-  {Bloco:'Bloco 19',Pavimento:'2º',Pacote:6,Tarefa:'Revestimento cerâmico de piso',Disciplina:'Revestimento(4)',Início:new Date('2026-05-18'),Fim:new Date('2026-06-12'),'Duração_dias_úteis':20,'Içamento_total':6},
-  {Bloco:'Bloco 19',Pavimento:'1º',Pacote:7,Tarefa:'Impermeabilização de banheiros',Disciplina:'Hidráulica(4)',Início:new Date('2026-06-01'),Fim:new Date('2026-07-01'),'Duração_dias_úteis':22,'Içamento_total':3},
-  {Bloco:'Bloco 19',Pavimento:'Térreo',Pacote:10,Tarefa:'Pintura geral interna',Disciplina:'Acabamentos(6)',Início:new Date('2026-08-01'),Fim:new Date('2026-09-01'),'Duração_dias_úteis':22,'Içamento_total':4},
-  {Bloco:'Bloco 18',Pavimento:'3º',Pacote:2,Tarefa:'Demolição inicial Bloco 18',Disciplina:'Estruturas(10)',Início:new Date('2026-06-08'),Fim:new Date('2026-06-20'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 18',Pavimento:'2º',Pacote:4,Tarefa:'Instalações elétricas Bloco 18',Disciplina:'Elétrica(3)',Início:new Date('2026-07-06'),Fim:new Date('2026-07-31'),'Duração_dias_úteis':20,'Içamento_total':4},
-  {Bloco:'Bloco 18',Pavimento:'1º',Pacote:7,Tarefa:'Revestimento e acabamento Bloco 18',Disciplina:'Revestimento(4)',Início:new Date('2026-09-01'),Fim:new Date('2026-10-01'),'Duração_dias_úteis':22,'Içamento_total':7},
-  {Bloco:'Bloco 18',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamentos finais Bloco 18',Disciplina:'Acabamentos(20)',Início:new Date('2026-11-01'),Fim:new Date('2026-12-15'),'Duração_dias_úteis':30,'Içamento_total':10},
-  {Bloco:'Bloco 17',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 17',Disciplina:'Estruturas(8)',Início:new Date('2026-08-10'),Fim:new Date('2026-08-24'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 17',Pavimento:'2º',Pacote:5,Tarefa:'Hidráulica Bloco 17',Disciplina:'Hidráulica(6)',Início:new Date('2026-09-14'),Fim:new Date('2026-10-09'),'Duração_dias_úteis':20,'Içamento_total':5},
-  {Bloco:'Bloco 17',Pavimento:'1º',Pacote:9,Tarefa:'Elétrica Bloco 17',Disciplina:'Elétrica(4)',Início:new Date('2026-10-05'),Fim:new Date('2026-11-06'),'Duração_dias_úteis':25,'Içamento_total':3},
-  {Bloco:'Bloco 17',Pavimento:'Térreo',Pacote:14,Tarefa:'Acabamento Bloco 17',Disciplina:'Acabamentos(12)',Início:new Date('2026-12-07'),Fim:new Date('2027-01-22'),'Duração_dias_úteis':30,'Içamento_total':8},
-  {Bloco:'Bloco 21',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 21',Disciplina:'Estruturas(8)',Início:new Date('2026-10-12'),Fim:new Date('2026-10-26'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 21',Pavimento:'2º',Pacote:5,Tarefa:'Instalações Bloco 21',Disciplina:'Hidráulica(4)',Início:new Date('2026-11-16'),Fim:new Date('2026-12-11'),'Duração_dias_úteis':20,'Içamento_total':5},
-  {Bloco:'Bloco 21',Pavimento:'1º',Pacote:9,Tarefa:'Revestimento Bloco 21',Disciplina:'Revestimento(4)',Início:new Date('2027-01-04'),Fim:new Date('2027-02-05'),'Duração_dias_úteis':25,'Içamento_total':7},
-  {Bloco:'Bloco 22',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 22',Disciplina:'Estruturas(10)',Início:new Date('2027-02-08'),Fim:new Date('2027-02-22'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 22',Pavimento:'2º',Pacote:4,Tarefa:'Elétrica Bloco 22',Disciplina:'Elétrica(3)',Início:new Date('2027-03-08'),Fim:new Date('2027-04-02'),'Duração_dias_úteis':20,'Içamento_total':4},
-  {Bloco:'Bloco 22',Pavimento:'Térreo',Pacote:10,Tarefa:'Acabamento Bloco 22',Disciplina:'Acabamentos(6)',Início:new Date('2027-07-01'),Fim:new Date('2027-08-01'),'Duração_dias_úteis':22,'Içamento_total':8},
-  {Bloco:'Bloco 23',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 23',Disciplina:'Hidráulica(6)',Início:new Date('2027-04-05'),Fim:new Date('2027-04-19'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 23',Pavimento:'2º',Pacote:5,Tarefa:'Estrutura Bloco 23',Disciplina:'Estruturas(8)',Início:new Date('2027-05-05'),Fim:new Date('2027-05-30'),'Duração_dias_úteis':20,'Içamento_total':5},
-  {Bloco:'Bloco 23',Pavimento:'Térreo',Pacote:12,Tarefa:'Acabamento Bloco 23',Disciplina:'Acabamentos(20)',Início:new Date('2027-08-04'),Fim:new Date('2027-09-05'),'Duração_dias_úteis':25,'Içamento_total':9},
-  {Bloco:'Bloco 24',Pavimento:'3º',Pacote:2,Tarefa:'Início obras Bloco 24',Disciplina:'Acabamentos(6)',Início:new Date('2027-05-31'),Fim:new Date('2027-06-14'),'Duração_dias_úteis':10,'Içamento_total':36},
-  {Bloco:'Bloco 24',Pavimento:'2º',Pacote:5,Tarefa:'Hidráulica Bloco 24',Disciplina:'Hidráulica(6)',Início:new Date('2027-07-07'),Fim:new Date('2027-08-01'),'Duração_dias_úteis':20,'Içamento_total':6},
-  {Bloco:'Bloco 24',Pavimento:'Térreo',Pacote:14,Tarefa:'Finalização Bloco 24',Disciplina:'Contratadas',Início:new Date('2027-11-01'),Fim:new Date('2027-12-31'),'Duração_dias_úteis':40,'Içamento_total':10},
-];
-renderAll(DEMO);
+renderAll();
+setTimeout(() => loadDocDatabase(), 150);
 </script>
 </body>
 </html>
