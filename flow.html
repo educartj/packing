@@ -509,6 +509,58 @@ if (pdfjs) {
 }
 
 const FLOW_STATES = ["Planejado", "Separando", "Conferindo", "Carregado", "Entregue", "Em Uso", "Finalizado"];
+// ============================
+// LEAN KIT ENGINE (ADICIONADO)
+// ============================
+
+const TASK_KIT_MAPPING = [
+  { match: ["INFRA","ELETRICA"], kit: "K-ELE-IFR" },
+  { match: ["CABEAMENTO"], kit: "K-ELE-CAB" },
+  { match: ["ILUMINACAO"], kit: "K-ELE-CAB" },
+
+  { match: ["DRYWALL","ESTRUTURA"], kit: "K-ACB-DWS" },
+  { match: ["DRYWALL","EMPLAC"], kit: "K-ACB-DWE" },
+  { match: ["FORRO"], kit: "K-ACB-FOR" },
+
+  { match: ["PINTURA","PREPAR"], kit: "K-ACB-PRE" },
+  { match: ["PINTURA"], kit: "K-ACB-PNT" },
+  { match: ["RETOQUE"], kit: "K-ACB-PRT" },
+
+  { match: ["LOUCAS"], kit: "K-HID-LMT" },
+  { match: ["AR","CONDICIONADO"], kit: "K-HID-ARR" },
+  { match: ["EXAUSTAO"], kit: "K-HID-EXA" },
+
+  { match: ["REVESTIMENTO"], kit: "K-RVT-PRD" },
+  { match: ["IMPERMEABIL"], kit: "K-RVT-IMP" },
+  { match: ["CARPETE"], kit: "K-RVT-CPT" }
+];
+
+function identifyLeanKit(activity){
+  const txt = norm(activity.tarefa + " " + activity.pacote);
+
+  for (let r of TASK_KIT_MAPPING){
+    if (r.match.every(w => txt.includes(norm(w)))) {
+      return r.kit;
+    }
+  }
+  return null;
+}
+
+function resolveKitFloor(prefix,pavimento){
+  if(!prefix) return null;
+
+  const p = norm(pavimento);
+
+  if(p.includes("3")) return prefix+"-3";
+  if(p.includes("2")) return prefix+"-2";
+  if(p.includes("1")) return prefix+"-1";
+
+  return prefix+"-T";
+}
+
+function calcSeparationDate(inicio){
+  return addDays(inicio,-3);
+}  
 const STORAGE_KEY = "leanflow-kit-controls-v2";
 const DOC_BASE_PATH = "doc/";
 const DOC_API_PATH = "doc/api/";
@@ -1187,15 +1239,28 @@ function ensureControl(id) {
   if (!state.kitControls[id]) state.kitControls[id] = { status: "Planejado", emergency: false, bottleneck: false, notes: "" };
 }
 function buildKit(activity) {
+
+
+  // 🔥 NOVO: engine Lean
+  const leanPrefix = identifyLeanKit(activity);
+  const leanKit = resolveKitFloor(leanPrefix, activity.pavimento);
+
   const matchedItems = matchItems(activity);
+
   const control = state.kitControls[activity.id] || {};
+
   const incompleteItems = matchedItems.filter((item) => item.incomplete);
+
   const hasMissingMaterial = matchedItems.length === 0 || incompleteItems.length > 0;
-  const deliveryIdeal = addDays(activity.inicio, -2);
+
+  // 🔥 ALTERADO (era -2)
+  const deliveryIdeal = calcSeparationDate(activity.inicio);
+ 
   const itemDeliveries = matchedItems.map((item) => item.entrega).filter(Boolean);
   const lateDelivery = itemDeliveries.some((date) => activity.inicio && date > activity.inicio);
   const score = priorityScore(activity, control, hasMissingMaterial, lateDelivery, matchedItems.length === 0, incompleteItems.length > 0);
   return {
+    leanKit,
     activity,
     id: activity.id,
     control,
@@ -1395,7 +1460,12 @@ function renderPriorities() {
     const a = k.activity;
     return `<tr>
       <td class="rank">${index + 1}</td>
-      <td><strong>${escapeHtml(a.tarefa || "Sem tarefa")}</strong><br><span class="hint">${escapeHtml([a.bloco, a.pavimento, a.discipline].filter(Boolean).join(" Â· "))}</span></td>
+      <td
+      
+<strong>${escapeHtml(k.leanKit || a.tarefa || "Sem tarefa")}</strong>
+<br><span class="hint">${escapeHtml(a.tarefa)}</span>
+     
+      </td>
       <td><span class="pill ${pillClass(k.risk)}">${k.score}/100</span><div class="scorebar"><div class="scorefill" style="width:${k.score}%;background:var(--${k.risk === "red" ? "red" : k.risk === "yellow" ? "yellow" : k.risk === "green" ? "green" : "blue"})"></div></div></td>
       <td>${fmtDate(a.inicio)}<br><span class="hint">${daysLabel(a.inicio)}</span></td>
       <td>${materialPills(k)}</td>
