@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma Inteligente</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f6f9;
+}
+
+header {
+    background: #1e272e;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+#search {
+    width: 90%;
+    padding: 10px;
+    margin: 15px auto;
+    display: block;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.container {
+    padding: 15px;
+}
+
+.block {
+    background: white;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.block-header {
+    background: #273c75;
+    color: white;
+    padding: 12px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.subcategory {
+    padding: 10px;
+    border-top: 1px solid #eee;
+}
+
+.subcategory h4 {
+    margin: 5px 0;
+    color: #192a56;
+}
+
+.task {
+    margin-left: 15px;
+    padding: 4px;
+    border-left: 3px solid #00a8ff;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.hidden {
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>📋 Cronograma por Bloco</h2>
+</header>
+
+<input type="text" id="search" placeholder="Pesquisar tarefa...">
+
+<div class="container" id="app"></div>
+
+<script>
+
+/////////////////////////////////////////////////////
+// 🔥 DADOS (simulação do Excel já estruturado)
+/////////////////////////////////////////////////////
+
+const dados = [
+{
+  bloco: "BLOCO 20",
+  subcategorias: [
+    {
+      nome: "PREPARAÇÃO DO CANTEIRO",
+      tarefas: [
+        "Instalação de sistema de água provisória",
+        "Instalação de elétrica provisória"
+      ]
+    },
+    {
+      nome: "3° ANDAR",
+      tarefas: [
+        "Retirada de elétrica e network",
+        "Demolição de paredes e revestimentos",
+        "Infra para abastecimento de água",
+        "Infra de iluminação",
+        "Montagem de drywall",
+        "Impermeabilização",
+        "Cabeamento geral",
+        "Revestimento de paredes",
+        "Instalação de ar condicionado",
+        "Pintura",
+        "Montagem de móveis",
+        "Granito e acabamento",
+        "Checklist de Qualidade"
+      ]
+    }
+  ]
+},
+
+{
+  bloco: "BLOCO 19",
+  subcategorias: [
+    {
+      nome: "FINALIZAÇÃO",
+      tarefas: [
+        "Retoques finais de pintura",
+        "Comissionamento hidráulico",
+        "Instalação de carpete",
+        "Assistência técnica dos móveis",
+        "Punchlist",
+        "Checklist de Qualidade"
+      ]
+    }
+  ]
+},
+
+{
+  bloco: "BLOCO 18",
+  subcategorias: [
+    {
+      nome: "ACABAMENTOS",
+      tarefas: [
+        "Instalação de box e bandô",
+        "Instalação de louças",
+        "Forro mineral",
+        "Comissionamento elétrico",
+        "Sistema de incêndio"
+      ]
+    }
+  ]
+},
+
+{
+  bloco: "BLOCO 17",
+  subcategorias: [
+    {
+      nome: "SISTEMAS",
+      tarefas: [
+        "Acabamento elétrico",
+        "Acabamento iluminação",
+        "Testes elétricos",
+        "Retirada elétrica provisória",
+        "Checklist de Qualidade"
+      ]
+    }
+  ]
+}
+
+];
+
+/////////////////////////////////////////////////////
+// 🎯 RENDERIZAÇÃO
+/////////////////////////////////////////////////////
+
+const app = document.getElementById("app");
+
+function render(data) {
+    app.innerHTML = "";
+
+    data.forEach(bloco => {
+        const blocoEl = document.createElement("div");
+        blocoEl.className = "block";
+
+        const header = document.createElement("div");
+        header.className = "block-header";
+        header.innerText = bloco.bloco;
+
+        const content = document.createElement("div");
+
+        header.onclick = () => {
+            content.classList.toggle("hidden");
+        };
+
+        bloco.subcategorias.forEach(sub => {
+            const subEl = document.createElement("div");
+            subEl.className = "subcategory";
+
+            const title = document.createElement("h4");
+            title.innerText = sub.nome;
+
+            subEl.appendChild(title);
+
+            sub.tarefas.forEach(task => {
+                const taskEl = document.createElement("div");
+                taskEl.className = "task";
+                taskEl.innerText = task;
+                subEl.appendChild(taskEl);
+            });
+
+            content.appendChild(subEl);
+        });
+
+        blocoEl.appendChild(header);
+        blocoEl.appendChild(content);
+
+        app.appendChild(blocoEl);
+    });
+}
+
+render(dados);
+
+/////////////////////////////////////////////////////
+// 🔎 BUSCA
+/////////////////////////////////////////////////////
+
+document.getElementById("search").addEventListener("input", function() {
+    const termo = this.value.toLowerCase();
+
+    const filtrado = dados.map(bloco => {
+        return {
+            bloco: bloco.bloco,
+            subcategorias: bloco.subcategorias.map(sub => {
+                return {
+                    nome: sub.nome,
+                    tarefas: sub.tarefas.filter(t => t.toLowerCase().includes(termo))
+                };
+            }).filter(sub => sub.tarefas.length > 0)
+        };
+    }).filter(bloco => bloco.subcategorias.length > 0);
+
+    render(filtrado);
+});
+
+</script>
+
+</body>
+</html>
