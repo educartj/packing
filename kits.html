@@ -19,12 +19,15 @@ header {
     text-align: center;
 }
 
-#search {
-    width: 90%;
-    padding: 10px;
-    margin: 15px auto;
-    display: block;
-    border-radius: 8px;
+.filters {
+    text-align: center;
+    margin: 10px;
+}
+
+input {
+    padding: 8px;
+    margin: 5px;
+    border-radius: 6px;
     border: 1px solid #ccc;
 }
 
@@ -53,21 +56,26 @@ header {
     border-top: 1px solid #eee;
 }
 
-.subcategory h4 {
-    margin: 5px 0;
-    color: #192a56;
-}
-
 .task {
-    margin-left: 15px;
-    padding: 4px;
+    margin-left: 10px;
+    padding: 6px;
     border-left: 3px solid #00a8ff;
-    margin-bottom: 4px;
-    font-size: 14px;
+    margin-bottom: 5px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
 }
 
-.hidden {
-    display: none;
+.status {
+    font-weight: bold;
+}
+
+.pendente {
+    color: red;
+}
+
+.entregue {
+    color: green;
 }
 </style>
 </head>
@@ -75,17 +83,20 @@ header {
 <body>
 
 <header>
-    <h2>📋 Cronograma por Bloco</h2>
+<h2>📋 Cronograma Inteligente</h2>
 </header>
 
-<input type="text" id="search" placeholder="Pesquisar tarefa...">
+<div class="filters">
+    🔎 Buscar: <input type="text" id="search">
+    📅 Data início: <input type="date" id="filtroData">
+</div>
 
 <div class="container" id="app"></div>
 
 <script>
 
 /////////////////////////////////////////////////////
-// 🔥 DADOS (simulação do Excel já estruturado)
+// 🔥 DADOS (exemplo com DATA DE INÍCIO)
 /////////////////////////////////////////////////////
 
 const dados = [
@@ -95,92 +106,62 @@ const dados = [
     {
       nome: "PREPARAÇÃO DO CANTEIRO",
       tarefas: [
-        "Instalação de sistema de água provisória",
-        "Instalação de elétrica provisória"
-      ]
-    },
-    {
-      nome: "3° ANDAR",
-      tarefas: [
-        "Retirada de elétrica e network",
-        "Demolição de paredes e revestimentos",
-        "Infra para abastecimento de água",
-        "Infra de iluminação",
-        "Montagem de drywall",
-        "Impermeabilização",
-        "Cabeamento geral",
-        "Revestimento de paredes",
-        "Instalação de ar condicionado",
-        "Pintura",
-        "Montagem de móveis",
-        "Granito e acabamento",
-        "Checklist de Qualidade"
-      ]
-    }
-  ]
-},
-
-{
-  bloco: "BLOCO 19",
-  subcategorias: [
-    {
-      nome: "FINALIZAÇÃO",
-      tarefas: [
-        "Retoques finais de pintura",
-        "Comissionamento hidráulico",
-        "Instalação de carpete",
-        "Assistência técnica dos móveis",
-        "Punchlist",
-        "Checklist de Qualidade"
-      ]
-    }
-  ]
-},
-
-{
-  bloco: "BLOCO 18",
-  subcategorias: [
-    {
-      nome: "ACABAMENTOS",
-      tarefas: [
-        "Instalação de box e bandô",
-        "Instalação de louças",
-        "Forro mineral",
-        "Comissionamento elétrico",
-        "Sistema de incêndio"
-      ]
-    }
-  ]
-},
-
-{
-  bloco: "BLOCO 17",
-  subcategorias: [
-    {
-      nome: "SISTEMAS",
-      tarefas: [
-        "Acabamento elétrico",
-        "Acabamento iluminação",
-        "Testes elétricos",
-        "Retirada elétrica provisória",
-        "Checklist de Qualidade"
+        { nome: "Instalação de água provisória", inicio: "2026-06-22" },
+        { nome: "Instalação elétrica provisória", inicio: "2026-06-25" }
       ]
     }
   ]
 }
-
 ];
 
 /////////////////////////////////////////////////////
-// 🎯 RENDERIZAÇÃO
+// 📅 FUNÇÕES DE DATA
+/////////////////////////////////////////////////////
+
+function formatarData(data) {
+    return new Date(data).toLocaleDateString("pt-BR");
+}
+
+function getSeparacao(data) {
+    const d = new Date(data);
+
+    d.setDate(d.getDate() - 7);
+
+    let segunda = new Date(d);
+    let quarta = new Date(d);
+
+    segunda.setDate(d.getDate() - d.getDay() + 1);
+    quarta.setDate(segunda.getDate() + 2);
+
+    return `${formatarData(segunda)} até ${formatarData(quarta)}`;
+}
+
+function getEntrega(data) {
+    const d = new Date(data);
+
+    d.setDate(d.getDate() - 7);
+
+    let quinta = new Date(d);
+    let sexta = new Date(d);
+
+    quinta.setDate(d.getDate() - d.getDay() + 4);
+    sexta.setDate(quinta.getDate() + 1);
+
+    return `${formatarData(quinta)} até ${formatarData(sexta)}`;
+}
+
+/////////////////////////////////////////////////////
+// 🎯 RENDER
 /////////////////////////////////////////////////////
 
 const app = document.getElementById("app");
 
 function render(data) {
+
     app.innerHTML = "";
 
     data.forEach(bloco => {
+
         const blocoEl = document.createElement("div");
         blocoEl.className = "block";
 
@@ -195,18 +176,46 @@ function render(data) {
         };
 
         bloco.subcategorias.forEach(sub => {
+
             const subEl = document.createElement("div");
             subEl.className = "subcategory";
 
             const title = document.createElement("h4");
             title.innerText = sub.nome;
-
             subEl.appendChild(title);
 
             sub.tarefas.forEach(task => {
+
                 const taskEl = document.createElement("div");
                 taskEl.className = "task";
-                taskEl.innerText = task;
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+
+                const status = document.createElement("span");
+                status.className = "status pendente";
+                status.innerText = "Pendente";
+
+                checkbox.onchange = () => {
+                    if (checkbox.checked) {
+                        status.innerText = "Entregue";
+                        status.className = "status entregue";
+                    } else {
+                        status.innerText = "Pendente";
+                        status.className = "status pendente";
+                    }
+                };
+
+                taskEl.innerHTML = `
+                    <strong>${task.nome}</strong><br>
+                    📅 Início: ${formatarData(task.inicio)}<br>
+                    📦 Separação: ${getSeparacao(task.inicio)}<br>
+                    🚚 Entrega: ${getEntrega(task.inicio)}<br>
+                `;
+
+                taskEl.prepend(checkbox);
+                taskEl.appendChild(status);
+
                 subEl.appendChild(taskEl);
             });
 
@@ -218,31 +227,48 @@ function render(data) {
 
         app.appendChild(blocoEl);
     });
+
 }
 
 render(dados);
 
 /////////////////////////////////////////////////////
-// 🔎 BUSCA
+// 🔎 FILTROS
 /////////////////////////////////////////////////////
 
-document.getElementById("search").addEventListener("input", function() {
-    const termo = this.value.toLowerCase();
+document.getElementById("search").addEventListener("input", filtrar);
+document.getElementById("filtroData").addEventListener("input", filtrar);
+
+function filtrar() {
+
+    const texto = document.getElementById("search").value.toLowerCase();
+    const dataFiltro = document.getElementById("filtroData").value;
 
     const filtrado = dados.map(bloco => {
+
         return {
             bloco: bloco.bloco,
             subcategorias: bloco.subcategorias.map(sub => {
+
                 return {
                     nome: sub.nome,
-                    tarefas: sub.tarefas.filter(t => t.toLowerCase().includes(termo))
+                    tarefas: sub.tarefas.filter(task => {
+
+                        const matchTexto = task.nome.toLowerCase().includes(texto);
+                        const matchData = !dataFiltro || task.inicio === dataFiltro;
+
+                        return matchTexto && matchData;
+                    })
+
                 };
+
             }).filter(sub => sub.tarefas.length > 0)
         };
+
     }).filter(bloco => bloco.subcategorias.length > 0);
 
     render(filtrado);
-});
+}
 
 </script>
 
