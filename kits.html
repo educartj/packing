@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cronograma Inteligente</title>
+<title>Leitor de Excel</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
+    font-family: Arial;
     background: #f4f6f9;
+    margin: 0;
 }
 
 header {
@@ -17,18 +19,6 @@ header {
     color: white;
     padding: 15px;
     text-align: center;
-}
-
-.filters {
-    text-align: center;
-    margin: 10px;
-}
-
-input {
-    padding: 8px;
-    margin: 5px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
 }
 
 .container {
@@ -39,43 +29,25 @@ input {
     background: white;
     margin-bottom: 15px;
     border-radius: 10px;
-    overflow: hidden;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .block-header {
     background: #273c75;
     color: white;
-    padding: 12px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.subcategory {
     padding: 10px;
-    border-top: 1px solid #eee;
 }
 
 .task {
-    margin-left: 10px;
-    padding: 6px;
-    border-left: 3px solid #00a8ff;
-    margin-bottom: 5px;
-    font-size: 13px;
-    display: flex;
-    flex-direction: column;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
 }
 
-.status {
-    font-weight: bold;
-}
+.pendente { color: red; }
+.entregue { color: green; }
 
-.pendente {
-    color: red;
-}
-
-.entregue {
-    color: green;
+input[type="file"] {
+    margin: 10px;
 }
 </style>
 </head>
@@ -83,108 +55,150 @@ input {
 <body>
 
 <header>
-<h2>📋 Cronograma Inteligente</h2>
+<h2>📊 Cronograma via Excel</h2>
 </header>
 
-<div class="filters">
-    🔎 Buscar: <input type="text" id="search">
-    📅 Data início: <input type="date" id="filtroData">
+<div class="container">
+
+<input type="file" id="inputExcel" />
+
+<div id="app"></div>
+
 </div>
 
-<div class="container" id="app"></div>
-
 <script>
-
-/////////////////////////////////////////////////////
-// 🔥 DADOS (exemplo com DATA DE INÍCIO)
-/////////////////////////////////////////////////////
-
-const dados = [
-{
-  bloco: "BLOCO 20",
-  subcategorias: [
-    {
-      nome: "PREPARAÇÃO DO CANTEIRO",
-      tarefas: [
-        { nome: "Instalação de água provisória", inicio: "2026-06-22" },
-        { nome: "Instalação elétrica provisória", inicio: "2026-06-25" }
-      ]
-    }
-  ]
-}
-];
 
 /////////////////////////////////////////////////////
 // 📅 FUNÇÕES DE DATA
 /////////////////////////////////////////////////////
 
-function formatarData(data) {
+function formatar(data) {
     return new Date(data).toLocaleDateString("pt-BR");
 }
 
-function getSeparacao(data) {
-    const d = new Date(data);
-
+function separacao(data) {
+    let d = new Date(data);
     d.setDate(d.getDate() - 7);
 
-    let segunda = new Date(d);
-    let quarta = new Date(d);
+    let seg = new Date(d);
+    let qua = new Date(d);
 
-    segunda.setDate(d.getDate() - d.getDay() + 1);
-    quarta.setDate(segunda.getDate() + 2);
+    seg.setDate(d.getDate() - d.getDay() + 1);
+    qua.setDate(seg.getDate() + 2);
 
-    return `${formatarData(segunda)} até ${formatarData(quarta)}`;
+    return `${formatar(seg)} até ${formatar(qua)}`;
 }
 
-function getEntrega(data) {
-    const d = new Date(data);
-
+function entrega(data) {
+    let d = new Date(data);
     d.setDate(d.getDate() - 7);
 
-    let quinta = new Date(d);
-    let sexta = new Date(d);
+    let qui = new Date(d);
+    let sex = new Date(d);
 
-    quinta.setDate(d.getDate() - d.getDay() + 4);
-    sexta.setDate(quinta.getDate() + 1);
+    qui.setDate(d.getDate() - d.getDay() + 4);
+    sex.setDate(qui.getDate() + 1);
 
-    return `${formatarData(quinta)} até ${formatarData(sexta)}`;
+    return `${formatar(qui)} até ${formatar(sex)}`;
+}
+
+/////////////////////////////////////////////////////
+// 📥 LEITURA DO EXCEL
+/////////////////////////////////////////////////////
+
+document.getElementById("inputExcel").addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+
+    reader.onload = function(evt) {
+
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, {type: "array"});
+
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        montar(json);
+    };
+
+    reader.readAsArrayBuffer(file);
+
+});
+
+/////////////////////////////////////////////////////
+// 🧠 ORGANIZAÇÃO AUTOMÁTICA
+/////////////////////////////////////////////////////
+
+function montar(dadosExcel) {
+
+    let blocoAtual = "";
+    let subAtual = "";
+
+    let estrutura = {};
+
+    dadosExcel.forEach(linha => {
+
+        const nome = linha["Nome_da_Tarefa"];
+        const inicio = linha["Data_Início"];
+
+        // BLOCO
+        if (nome && nome.includes("BLOCO")) {
+            blocoAtual = nome;
+            estrutura[blocoAtual] = {};
+        }
+
+        // SUBCATEGORIA (nível 2 geralmente)
+        else if (linha["Nível_da_Estrutura_de_Tópicos"] == 2) {
+            subAtual = nome;
+            estrutura[blocoAtual][subAtual] = [];
+        }
+
+        // TAREFA
+        else if (linha["Nível_da_Estrutura_de_Tópicos"] >= 3) {
+
+            if (blocoAtual && subAtual) {
+                estrutura[blocoAtual][subAtual].push({
+                    nome,
+                    inicio
+                });
+            }
+        }
+
+    });
+
+    render(estrutura);
 }
 
 /////////////////////////////////////////////////////
 // 🎯 RENDER
 /////////////////////////////////////////////////////
 
-const app = document.getElementById("app");
+function render(estrutura) {
 
-function render(data) {
-
+    const app = document.getElementById("app");
     app.innerHTML = "";
 
-    data.forEach(bloco => {
+    Object.keys(estrutura).forEach(bloco => {
 
         const blocoEl = document.createElement("div");
         blocoEl.className = "block";
 
         const header = document.createElement("div");
         header.className = "block-header";
-        header.innerText = bloco.bloco;
+        header.innerText = bloco;
 
-        const content = document.createElement("div");
+        blocoEl.appendChild(header);
 
-        header.onclick = () => {
-            content.classList.toggle("hidden");
-        };
-
-        bloco.subcategorias.forEach(sub => {
+        Object.keys(estrutura[bloco]).forEach(sub => {
 
             const subEl = document.createElement("div");
-            subEl.className = "subcategory";
+            subEl.innerHTML = `<h4 style="margin-left:10px">${sub}</h4>`;
 
-            const title = document.createElement("h4");
-            title.innerText = sub.nome;
-            subEl.appendChild(title);
+            estrutura[bloco][sub].forEach(task => {
 
-            sub.tarefas.forEach(task => {
+                let inicio = task.inicio ? new Date(task.inicio) : null;
 
                 const taskEl = document.createElement("div");
                 taskEl.className = "task";
@@ -193,81 +207,39 @@ function render(data) {
                 checkbox.type = "checkbox";
 
                 const status = document.createElement("span");
-                status.className = "status pendente";
-                status.innerText = "Pendente";
+                status.className = "pendente";
+                status.innerText = " Pendente";
 
                 checkbox.onchange = () => {
                     if (checkbox.checked) {
-                        status.innerText = "Entregue";
-                        status.className = "status entregue";
+                        status.innerText = " Entregue";
+                        status.className = "entregue";
                     } else {
-                        status.innerText = "Pendente";
-                        status.className = "status pendente";
+                        status.innerText = " Pendente";
+                        status.className = "pendente";
                     }
                 };
 
-                taskEl.innerHTML = `
+                taskEl.appendChild(checkbox);
+
+                taskEl.innerHTML += `
                     <strong>${task.nome}</strong><br>
-                    📅 Início: ${formatarData(task.inicio)}<br>
-                    📦 Separação: ${getSeparacao(task.inicio)}<br>
-                    🚚 Entrega: ${getEntrega(task.inicio)}<br>
+                    📅 Início: ${inicio ? formatar(inicio) : "-"}<br>
+                    📦 Separação: ${inicio ? separacao(inicio) : "-"}<br>
+                    🚚 Entrega: ${inicio ? entrega(inicio) : "-"}
                 `;
 
-                taskEl.prepend(checkbox);
                 taskEl.appendChild(status);
 
                 subEl.appendChild(taskEl);
+
             });
 
-            content.appendChild(subEl);
+            blocoEl.appendChild(subEl);
         });
-
-        blocoEl.appendChild(header);
-        blocoEl.appendChild(content);
 
         app.appendChild(blocoEl);
     });
-
-}
-
-render(dados);
-
-/////////////////////////////////////////////////////
-// 🔎 FILTROS
-/////////////////////////////////////////////////////
-
-document.getElementById("search").addEventListener("input", filtrar);
-document.getElementById("filtroData").addEventListener("input", filtrar);
-
-function filtrar() {
-
-    const texto = document.getElementById("search").value.toLowerCase();
-    const dataFiltro = document.getElementById("filtroData").value;
-
-    const filtrado = dados.map(bloco => {
-
-        return {
-            bloco: bloco.bloco,
-            subcategorias: bloco.subcategorias.map(sub => {
-
-                return {
-                    nome: sub.nome,
-                    tarefas: sub.tarefas.filter(task => {
-
-                        const matchTexto = task.nome.toLowerCase().includes(texto);
-                        const matchData = !dataFiltro || task.inicio === dataFiltro;
-
-                        return matchTexto && matchData;
-                    })
-
-                };
-
-            }).filter(sub => sub.tarefas.length > 0)
-        };
-
-    }).filter(bloco => bloco.subcategorias.length > 0);
-
-    render(filtrado);
 }
 
 </script>
